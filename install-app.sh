@@ -7,7 +7,10 @@ ICON_DIR="$DATA_HOME/icons/hicolor/scalable/apps"
 
 DESKTOP_TMP="$(mktemp)"
 trap 'rm -f "$DESKTOP_TMP"' EXIT
-sed "s|^Exec=.*|Exec=$ROOT/revenger-pro-4k|" "$ROOT/revenger-pro-4k.desktop" \
+sed \
+  -e "s|^Exec=.*|Exec=$ROOT/revenger-pro-4k|" \
+  -e "s|^Icon=.*|Icon=$ICON_DIR/io.noah.revengerpro4k.svg|" \
+  "$ROOT/revenger-pro-4k.desktop" \
   > "$DESKTOP_TMP"
 install -Dm644 "$DESKTOP_TMP" "$APPLICATIONS/io.noah.revengerpro4k.desktop"
 install -Dm644 "$ROOT/icons/io.noah.revengerpro4k.svg" \
