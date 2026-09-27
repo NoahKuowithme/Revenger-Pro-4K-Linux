@@ -1,13 +1,7 @@
-"""Compx vendor HID used by the Revenger Pro 4K dongle.
+"""HID report helpers for the COUGAR Revenger Pro 4K receiver.
 
-The control interface (hidraw, report descriptor ~150 bytes) exposes:
-
-* Feature report 0x06 — 7-byte payload (status / battery-style reads)
-* Output/input report 0x08 — 16-byte payload (configuration)
-
-Packet layout matches other Compx PAW3395 4K OEM mice (same VID 0x3554
-family). Commands are original builders for this app, sized to the HID
-descriptor captured from Noah's dongle (3554:f5de).
+Pairing and flash-write frames are derived from the Windows UIX 1.0.0.42
+native HID DLL. The flash layout is for the Revenger Pro 4K's PixArt 3395.
 """
 
 from __future__ import annotations
@@ -19,13 +13,16 @@ REPORT_FEATURE = 0x06
 OUT_LEN = 17  # report id + 16 bytes
 FEATURE_LEN = 8  # report id + 7 bytes
 
+# UIX 1.0.0.42 identifies this mouse as CID 53 in Config.ini.
+DEFAULT_PAIR_CID = 0x35
+
 POLLING_CODES = {
     125: 0x08,
     250: 0x04,
     500: 0x02,
     1000: 0x01,
-    2000: 0x11,
-    4000: 0x12,
+    2000: 0x10,
+    4000: 0x20,
 }
 POLLING_FROM_CODE = {code: hz for hz, code in POLLING_CODES.items()}
 
@@ -45,39 +42,130 @@ def _out(cmd: int, args: bytes = b"") -> bytes:
     body[0] = cmd
     body[1 : 1 + len(args)] = args[:15]
     pkt = bytes([REPORT_OUT]) + bytes(body)
-    # Last byte is a simple additive checksum over the 16-byte body
-    # excluding itself (common Compx pattern).
+    # Legacy experimental checksum. These non-pairing commands are unverified.
     chk = _checksum(pkt[1:16])
     return pkt[:16] + bytes([chk])
 
 
-def encode_dpi(dpi: int) -> tuple[int, int]:
-    dpi = max(DPI_MIN, min(DPI_MAX, int(dpi)))
-    dpi -= dpi % DPI_STEP
-    return dpi & 0xFF, (dpi >> 8) & 0xFF
+def _flash_write(address: int, data: bytes) -> bytes:
+    """Build UIX WriteFlashData (0x07), including its 0x55 checksum."""
+    if not 0 <= address <= 0xFFFF:
+        raise ValueError("Flash address must fit in 16 bits")
+    if not 1 <= len(data) <= 10:
+        raise ValueError("Flash writes must contain 1-10 data bytes")
+    body = bytearray(16)
+    body[0] = REPORT_OUT
+    body[1] = 0x07
+    body[3:5] = address.to_bytes(2, "big")
+    body[5] = len(data)
+    body[6 : 6 + len(data)] = data
+    return bytes(body) + bytes([(0x55 - sum(body)) & 0xFF])
 
 
-def decode_dpi(lo: int, hi: int) -> int:
-    return int(lo | (hi << 8))
+def _flash_data_with_checksum(data: bytes) -> bytes:
+    """Append the per-field checksum stored alongside UIX flash data."""
+    return data + bytes([(0x55 - sum(data)) & 0xFF])
+
+
+def _mouse_config_write(address: int, data: bytes) -> bytes:
+    """Build UIX's two-byte MouseConfig flash record (address is little-endian)."""
+    if not 0 <= address <= 0xFFFF:
+        raise ValueError("Mouse config address must fit in 16 bits")
+    if not 1 <= len(data) <= 10:
+        raise ValueError("Mouse config writes must contain 1-10 data bytes")
+    body = bytearray(16)
+    body[0] = REPORT_OUT
+    body[1] = 0x07
+    body[4:6] = address.to_bytes(2, "little")
+    body[6 : 6 + len(data)] = data
+    return bytes(body) + bytes([(0x55 - sum(body)) & 0xFF])
+
+
+def _usb_server_command(command: int, cid: int | None = None) -> bytes:
+    """Build the 17-byte feature report used by UIX's dongle command queue."""
+    body = bytearray(16)
+    body[0] = REPORT_OUT
+    body[1] = command
+    if command == 0x05:  # EnterDonglePairOnlyCid
+        if cid is None or not 0 <= cid <= 0xFF:
+            raise ValueError("Pairing CID must be between 0 and 255")
+        body[5] = 0x02
+        body[8] = cid
+    # HIDUsb.dll's checksum is 0x55 minus the sum of the first 16 bytes.
+    return bytes(body) + bytes([(0x55 - sum(body)) & 0xFF])
+
+
+def enter_dongle_pair(cid: int = DEFAULT_PAIR_CID) -> bytes:
+    """UIX EnterDonglePairOnlyCid packet for the Revenger Pro 4K dongle."""
+    return _usb_server_command(0x05, cid)
+
+
+def read_dongle_pair_status() -> bytes:
+    """UIX ReadDonglePairStatus request."""
+    return _usb_server_command(0x06)
+
+
+def parse_dongle_pair_status(report: bytes) -> int | None:
+    """Return UIX pairing status (1=pending, 2=success, 3=failure).
+
+    UIX's callback receives the response data separately from the six-byte
+    command header, so hidraw's corresponding first data byte is report[6].
+    Ignore unrelated, short, or checksum-invalid input reports.
+    """
+    if len(report) < OUT_LEN or report[0] != REPORT_OUT or report[1] != 0x06:
+        return None
+    frame = report[:OUT_LEN]
+    if (sum(frame[:16]) + frame[16]) & 0xFF != 0x55:
+        return None
+    return frame[6]
+
+
+def encode_dpi(dpi: int) -> tuple[int, int, int]:
+    """Encode a 3395 DPI value as UIX xDPI, yDPI, and DPIex bytes."""
+    dpi = int(dpi)
+    if not DPI_MIN <= dpi <= DPI_MAX or dpi % DPI_STEP:
+        raise ValueError(f"DPI must be {DPI_MIN}-{DPI_MAX} in steps of {DPI_STEP}")
+    units = dpi // DPI_STEP - 1
+    high = units >> 8
+    # UIX stores the quotient's high bits in duplicated DPIex bit fields.
+    dpi_ex = ((high & 0x03) << 2) | ((high & 0x03) << 6)
+    low = units & 0xFF
+    return low, low, dpi_ex
+
+
+def decode_dpi(x_dpi: int, y_dpi: int, dpi_ex: int) -> int:
+    """Decode the standard 3395 DPI representation (without special modes)."""
+    if x_dpi != y_dpi:
+        raise ValueError("X and Y DPI encodings differ")
+    high = ((dpi_ex >> 2) & 0x03) | ((dpi_ex >> 6) & 0x03)
+    units = (high << 8) | x_dpi
+    return (units + 1) * DPI_STEP
 
 
 def set_polling(hz: int) -> bytes:
     if hz not in POLLING_CODES:
         raise ValueError(f"Unsupported polling rate: {hz}")
-    return _out(0x04, bytes([POLLING_CODES[hz]]))
+    # UIX stores MouseConfig fields at 0x0200 + 2 * field index; each one-byte
+    # value is followed by its field checksum. For reportRate, the resulting
+    # frame also matches the zero-address/two-byte generic record on the wire.
+    value = bytes([POLLING_CODES[hz]])
+    return _mouse_config_write(0x0200, _flash_data_with_checksum(value))
 
 
 def set_dpi_stage(stage: int, dpi: int) -> bytes:
     if not 0 <= stage < STAGE_COUNT:
         raise ValueError("DPI stage must be 0-4")
-    lo, hi = encode_dpi(dpi)
-    return _out(0x07, bytes([stage + 1, lo, hi]))
+    # Each DPIConfig's xDPI/yDPI/DPIex occupies a four-byte flash record.
+    encoded = bytes(encode_dpi(dpi))
+    address = 0x000C + stage * 4
+    return _flash_write(address, _flash_data_with_checksum(encoded))
 
 
 def set_active_stage(stage: int) -> bytes:
     if not 0 <= stage < STAGE_COUNT:
         raise ValueError("DPI stage must be 0-4")
-    return _out(0x0A, bytes([stage + 1]))
+    # MouseConfig.currentDPI is a zero-based index at UIX flash address 0x0204.
+    return _mouse_config_write(0x0204, _flash_data_with_checksum(bytes([stage])))
 
 
 def set_lod(mm: int) -> bytes:

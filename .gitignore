@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# Extracted proprietary Windows UIX files are local research material, not Linux app assets.
+references/uix-windows-extract/*
+!references/uix-windows-extract/README.md
+references/legacy-launcher/*
+!references/legacy-launcher/README.md

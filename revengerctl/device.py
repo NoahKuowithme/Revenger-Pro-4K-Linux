@@ -9,7 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 VID = 0x3554
-PIDS = {0xF5DE, 0xF5DF}
+PIDS = {0xF5DC, 0xF5DE, 0xF5DF}
+ONE_K_PID = 0xF5DC
+FOUR_K_PID = 0xF5DF
 
 # hidraw ioctl: _IOC(_IOC_READ|_IOC_WRITE, 'H', 0x06/0x07, len)
 def _hidioc_feature(set_not_get: bool, length: int) -> int:
@@ -55,7 +57,7 @@ def list_revenger_interfaces() -> list[HidInterface]:
     hidraw = Path("/sys/class/hidraw")
     if not hidraw.exists():
         return found
-    for node in sorted(hidraw.iterdir()):
+    for node in sorted(hidraw.iterdir(), key=lambda item: int(item.name[6:])):
         uevent = node / "device" / "uevent"
         desc = node / "device" / "report_descriptor"
         if not uevent.exists() or not desc.exists():
@@ -87,7 +89,31 @@ def list_revenger_interfaces() -> list[HidInterface]:
 
 def find_control() -> HidInterface | None:
     matches = [iface for iface in list_revenger_interfaces() if iface.is_control]
-    return matches[0] if matches else None
+    if not matches:
+        return None
+    return next((iface for iface in matches if iface.product == FOUR_K_PID), matches[0])
+
+
+def find_4k_control() -> HidInterface | None:
+    return next(
+        (
+            iface
+            for iface in list_revenger_interfaces()
+            if iface.product == FOUR_K_PID and iface.is_control
+        ),
+        None,
+    )
+
+
+def find_1k_control() -> HidInterface | None:
+    return next(
+        (
+            iface
+            for iface in list_revenger_interfaces()
+            if iface.product == ONE_K_PID and iface.is_control
+        ),
+        None,
+    )
 
 
 def find_any() -> HidInterface | None:
@@ -125,3 +151,6 @@ class HidRaw:
 
     def read(self, length: int = 64) -> bytes:
         return os.read(self._fd, length)
+
+    def fileno(self) -> int:
+        return self._fd

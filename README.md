@@ -19,14 +19,40 @@ cd ~/Desktop/Revenger-Pro-4K-Linux
 ./revenger-pro-4k
 ```
 
+The GUI has **Mouse settings** and **Receiver connection** pages; choose English
+or Traditional Chinese from the header. **Apply to mouse** is in the polling-rate
+section beside the DPI controls.
+
+### Customize the GUI
+
+The GUI layout and behavior are in [`revengerctl/app.py`](revengerctl/app.py).
+Edit the `TEXT` dictionary near the top of that file to change English or
+Traditional Chinese labels and messages. The `MainWindow` class builds the
+header and the **Mouse settings** / **Receiver connection** pages; look there to
+rearrange controls or adjust the layout. Restart the app to see your changes.
+
 CLI:
 
 ```bash
 ./revengerctl-cli probe
 ./revengerctl-cli status
-./revengerctl-cli polling 1000
 ./revengerctl-cli dpi 2 1600
+./revengerctl-cli polling 4000
 ./revengerctl-cli apply
+./revengerctl-cli pair
+./revengerctl-cli pair --receiver 1k
+```
+
+`pair` defaults to the 4K receiver; use `--receiver 1k` to target the 2.4 GHz
+receiver. Disconnect the other receiver, turn on the mouse, place it within
+10 cm, then hold middle-wheel + right + left together for about 3 seconds until the
+yellow pairing light flashes rapidly. Only then start receiver pairing. Add
+`--debug` to print input reports as hex if pairing fails.
+
+To add the app to the desktop application menu with its icon, run:
+
+```bash
+./install-app.sh
 ```
 
 Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
@@ -39,11 +65,29 @@ Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
 ./install-udev.sh
 ```
 
-Then unplug and replug the dongle. After that, **Apply to mouse** can write DPI, polling, lift-off, and debounce.
+Then unplug and replug the dongle. This grants the app permission to open the HID interface.
 
 ## Notes
 
 - The mouse still works as a normal pointer without this app.
-- 2000 Hz / 4000 Hz only apply when the **4K** receiver is plugged in.
-- Compx firmware variants exist. If a setting does not stick, check `./revengerctl-cli status` after applying.
+- `dpi` and `polling` use UIX 1.0.0.42-derived flash-write frames sent using
+  HID SetFeature, matching UIX's native route for command reports. The `dpi`
+  command writes the requested stage and activates it; `apply` writes polling,
+  all five DPI stages, and the selected active stage with a short gap between
+  reports. DPI changes still need physical validation.
+- Lift-off and debounce are not implemented; the GUI shows their saved profile
+  values but disables the controls and labels them as unapplied.
+- `status` does not yet read the five DPI values back from mouse flash, so its
+  displayed DPI stages and active-stage selection come from the local profile.
+  The polling-rate field is also not yet confirmed as a reliable hardware
+  readback.
+- Pair-status decoding is based on UIX's native callback layout and still needs
+  a hardware run to confirm the Linux report offset.
 - Not affiliated with COUGAR / Compucase.
+
+## Reference files
+
+The `references/` folder documents local research material. The extracted
+Windows UIX DLLs/resources and the old desktop launcher are intentionally
+ignored by Git; they are not needed to run the Linux app. The active launcher
+is `revenger-pro-4k.desktop`.

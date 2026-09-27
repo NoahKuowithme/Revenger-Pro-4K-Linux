@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from .device import HidRaw, find_any, find_control, list_revenger_interfaces
 from .protocol import (
     FEATURE_LEN,
@@ -9,12 +11,12 @@ from .protocol import (
     parse_feature06,
     request_status,
     set_active_stage,
-    set_debounce_ms,
     set_dpi_stage,
-    set_lod,
     set_polling,
 )
 from .profiles import load_profile
+
+_REPORT_INTERVAL_SECONDS = 0.02
 
 
 def refresh() -> MouseState:
@@ -48,19 +50,36 @@ def refresh() -> MouseState:
     return state
 
 
-def apply(state: MouseState) -> str:
+def _write_reports(reports: list[bytes]) -> str:
     control = find_control()
     if control is None:
         raise RuntimeError("Revenger Pro 4K control interface not found. Plug in the 4K dongle.")
     with HidRaw(control.path) as hid:
-        hid.write_output(set_polling(state.polling_hz))
-        for index, dpi in enumerate(state.dpi_stages):
-            hid.write_output(set_dpi_stage(index, dpi))
-        hid.write_output(set_active_stage(state.active_stage))
-        hid.write_output(set_lod(state.lod_mm))
-        hid.write_output(set_debounce_ms(state.debounce_ms))
-        try:
-            hid.set_feature(request_status())
-        except OSError:
-            pass
+        for index, report in enumerate(reports):
+            # UIX routes nonzero command reports (including WriteFlashData 0x07)
+            # through HID SetFeature, not the interrupt-OUT WriteFile path.
+            hid.set_feature(report)
+            if index + 1 < len(reports):
+                # Leave the receiver time to commit each flash record before
+                # issuing the next one (the GUI's Apply sends several records).
+                time.sleep(_REPORT_INTERVAL_SECONDS)
     return control.path
+
+
+def apply_dpi_stage(stage: int, dpi: int) -> str:
+    """Write a DPI stage and select it so the change is immediately testable."""
+    return _write_reports([set_dpi_stage(stage, dpi), set_active_stage(stage)])
+
+
+def apply_polling(hz: int) -> str:
+    return _write_reports([set_polling(hz)])
+
+
+def apply(state: MouseState) -> str:
+    """Write polling, five DPI stages, and the selected active DPI stage."""
+    reports = [set_polling(state.polling_hz)]
+    reports.extend(
+        set_dpi_stage(index, dpi) for index, dpi in enumerate(state.dpi_stages[:5])
+    )
+    reports.append(set_active_stage(state.active_stage))
+    return _write_reports(reports)
