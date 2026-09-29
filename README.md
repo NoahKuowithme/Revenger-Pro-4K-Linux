@@ -59,13 +59,18 @@ Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
 
 ## Allow HID access (once)
 
-`/dev/hidraw*` is root-only until you install the udev rule:
+`/dev/hidraw*` is root-only until you install the udev rule. The rule uses
+`uaccess` for the active desktop session and does not depend on Ubuntu's
+`plugdev` group, so it also works on Arch-based systems such as CachyOS:
 
 ```bash
 ./install-udev.sh
 ```
 
 Then unplug and replug the dongle. This grants the app permission to open the HID interface.
+If the app still reports an access error, check that you launched it from your
+logged-in desktop session and inspect the node's ACL with
+`getfacl /dev/hidrawN` (replace `N` with the path shown by `./revengerctl-cli probe`).
 
 ## Notes
 
