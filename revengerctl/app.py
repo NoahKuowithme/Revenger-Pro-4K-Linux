@@ -577,7 +577,10 @@ class CompanionWindow(Adw.ApplicationWindow):
     def _render_dpi_rows(self) -> None:
         was_syncing = self._syncing
         self._syncing = True
-        self.dpi_rows_box.remove_all()
+        child = self.dpi_rows_box.get_first_child()
+        while child is not None:
+            self.dpi_rows_box.remove(child)
+            child = self.dpi_rows_box.get_first_child()
         self.dpi_spins.clear()
         self.stage_checks.clear()
         self.stage_rows.clear()

@@ -25,7 +25,7 @@ modules:
     sources:
       - type: git
         url: https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux.git
-        commit: 099539f35394edef6bfa50e5c911e008ea291bdc
+        commit: 0c77fcf502839c2c424ceb03977c1ac6df965634
       - type: file
         path: io.noah.revengerpro4k.desktop
       - type: file
