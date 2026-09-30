@@ -22,9 +22,13 @@ from revengerctl import APP_ID, APP_SUBTITLE, APP_TITLE  # noqa: E402
 from revengerctl.apply import apply, refresh  # noqa: E402
 from revengerctl.device import FOUR_K_PID, ONE_K_PID, list_revenger_interfaces  # noqa: E402
 from revengerctl.profiles import save_profile  # noqa: E402
-from revengerctl.protocol import DPI_MAX, DPI_MIN, DPI_STEP, MouseState, POLLING_CODES  # noqa: E402
+from revengerctl.protocol import DPI_MAX, DPI_MIN, DPI_STEP, MouseState, STAGE_COUNT  # noqa: E402
 
 CSS = b"""
+window {
+  background-color: alpha(#18181b, 0.85);
+  color: #f4f4f5;
+}
 .hero-title {
   font-weight: 750;
   font-size: 24px;
@@ -33,8 +37,11 @@ CSS = b"""
   font-weight: 700;
   font-size: 20px;
 }
-.card {
-  padding: 10px;
+.surface-card {
+  background-color: #27272a;
+  border: 1px solid alpha(#f97316, 0.42);
+  border-radius: 12px;
+  padding: 14px;
 }
 .receiver-name {
   font-weight: 700;
@@ -43,9 +50,39 @@ CSS = b"""
 .pair-result {
   padding: 8px;
 }
+.pair-failure {
+  color: #ffb4ab;
+  background-color: alpha(#b3261e, 0.24);
+  border-radius: 8px;
+}
 .device-path {
   font-family: monospace;
   font-weight: 650;
+}
+button.primary-action {
+  background-color: #f97316;
+  color: #18181b;
+  font-weight: 750;
+  min-height: 42px;
+}
+button.primary-action:hover {
+  background-color: #fb923c;
+}
+button.primary-action:disabled {
+  background-color: alpha(#f97316, 0.42);
+}
+button.preset:checked, button.poll-rate:checked {
+  background-color: #f97316;
+  color: #18181b;
+  border-color: #ff6600;
+  box-shadow: 0 0 8px alpha(#f97316, 0.38);
+}
+.section-title {
+  font-weight: 700;
+  font-size: 17px;
+}
+.stage-row {
+  padding: 4px 0;
 }
 """
 
@@ -87,24 +124,36 @@ TEXT = {
         "pair_started": "Pairing request sent to {path}. The mouse should already be in pairing mode (rapid yellow light).",
         "pair_pending": "Receiver is waiting for the mouse…",
         "pair_succeeded": "Pairing succeeded.",
-        "pair_failed": "Receiver reported pairing failure (status 3). Hold the middle-wheel + right + left buttons until the yellow light flashes rapidly before starting.",
+        "pair_failed": "Pairing failure (Status 3). Hold the middle-wheel + right + left buttons until the yellow light flashes rapidly, then retry.",
         "pair_timeout": "No pairing result before timeout. Check the mouse pairing mode and try again.",
         "stat_polling": "Polling",
         "stat_weight": "Weight",
         "stat_battery": "Battery",
         "specs": "PixArt 26,000 DPI optical sensor  ·  4K wireless receiver (up to 4000 Hz)  ·  up to 150 hours  ·  PTFE feet + grip tape",
         "dpi_title": "DPI stages",
-        "dpi_description": "Five onboard stages, 50–26,000 DPI in steps of 50. Select a stage, set its DPI, then Apply writes the values and activates the selected stage.",
+        "dpi_description": "Select a stage, choose a preset or enter a custom DPI. The mouse has five physical slots; unused slots repeat the last configured value.",
         "stage": "Stage",
+        "dpi_presets": "DPI presets",
+        "add_stage": "Add stage",
+        "remove_stage": "Remove selected stage",
+        "stage_limit": "The mouse supports up to five DPI slots.",
+        "stage_minimum": "Keep at least one DPI stage.",
         "polling_title": "Polling rate",
         "polling_description": "Use 1000 Hz on the 1K receiver. 2000 / 4000 Hz need the 4K receiver.",
         "apply_title": "Apply current settings",
-        "apply_subtitle": "Write the selected DPI stages and polling rate to the mouse.",
+        "apply_subtitle": "Write DPI, polling rate, lift-off distance and sensor toggles to the mouse.",
         "apply_button": "Apply to mouse",
+        "sensor_pending": "UIX 1.0.0.42 confirms these settings for the PixArt 3395. Changes are written with Apply to mouse.",
+        "angle_title": "Angle snapping",
+        "motion_title": "Motion sync",
+        "calibrate_title": "Surface calibration",
+        "calibrate_button": "Calibrate",
+        "calibration_wait": "UIX status timer: {seconds}s",
+        "calibration_done": "UIX 3-second status flow finished. No calibration HID command was found in the reference app.",
         "sensor_title": "Sensor tuning",
-        "sensor_description": "Lift-off distance and debounce are not implemented yet. These values are not read from or written to the mouse.",
+        "sensor_description": "Supported by the 3395 sensor. Apply to mouse writes these values; readback is not yet available.",
         "lod_title": "Lift-off distance",
-        "lod_subtitle": "Not currently applied to the mouse",
+        "lod_subtitle": "Applied with the main button",
         "debounce_title": "Debounce",
         "debounce_subtitle": "Not currently applied to the mouse",
         "permission_error": "HID permission needed. Run ./install-udev.sh, then replug the receiver.",
@@ -147,24 +196,36 @@ TEXT = {
         "pair_started": "已向 {path} 傳送配對請求。滑鼠應已進入配對模式（黃燈快速閃爍）。",
         "pair_pending": "接收器正在等待滑鼠…",
         "pair_succeeded": "配對成功。",
-        "pair_failed": "接收器回報配對失敗（status 3）。請先同時按住滾輪、右鍵與左鍵，直到黃燈快速閃爍，再開始配對。",
+        "pair_failed": "配對失敗（狀態 3）。請先同時按住滾輪、右鍵與左鍵，直到黃燈快速閃爍，再重試。",
         "pair_timeout": "等待配對結果逾時。請確認滑鼠已進入配對模式後重試。",
         "stat_polling": "輪詢率",
         "stat_weight": "重量",
         "stat_battery": "電量",
         "specs": "PixArt 26,000 DPI 光學感應器  ·  4K 無線接收器（最高 4000 Hz）  ·  最長 150 小時  ·  PTFE 鼠腳與止滑貼",
         "dpi_title": "DPI 段數",
-        "dpi_description": "共五段，範圍 50–26,000 DPI、每次增減 50。選擇段數並設定 DPI，按下套用後會寫入並切換至所選段數。",
+        "dpi_description": "選擇 DPI 段、套用快速預設或輸入自訂數值。滑鼠有五個實體槽位；未使用的槽位會重複最後一段數值。",
         "stage": "第",
+        "dpi_presets": "DPI 快速預設",
+        "add_stage": "新增段數",
+        "remove_stage": "移除所選段數",
+        "stage_limit": "滑鼠最多支援五個 DPI 槽位。",
+        "stage_minimum": "至少保留一個 DPI 段數。",
         "polling_title": "輪詢率",
         "polling_description": "1K 接收器使用 1000 Hz；2000 / 4000 Hz 需搭配 4K 接收器。",
         "apply_title": "套用目前設定",
-        "apply_subtitle": "將 DPI 段數與輪詢率寫入滑鼠。",
+        "apply_subtitle": "將 DPI、輪詢率、抬升高度與感測器開關寫入滑鼠。",
         "apply_button": "套用至滑鼠",
+        "sensor_pending": "官方 UIX 1.0.0.42 確認這些設定適用於 PixArt 3395；按「套用至滑鼠」後寫入。",
+        "angle_title": "直線修正",
+        "motion_title": "Motion Sync",
+        "calibrate_title": "表面校準",
+        "calibrate_button": "開始校準",
+        "calibration_wait": "UIX 狀態計時：{seconds} 秒",
+        "calibration_done": "UIX 三秒狀態流程已結束。參考程式沒有送出感測器校準 HID 命令。",
         "sensor_title": "感應器調整",
-        "sensor_description": "抬升高度與按鍵去抖尚未實作；目前無法從滑鼠讀取或寫入這些設定。",
+        "sensor_description": "3395 感測器支援這些設定。按「套用至滑鼠」寫入；目前尚無法讀回確認值。",
         "lod_title": "抬升高度",
-        "lod_subtitle": "目前不會套用至滑鼠",
+        "lod_subtitle": "按主按鈕後寫入",
         "debounce_title": "按鍵去抖",
         "debounce_subtitle": "目前不會套用至滑鼠",
         "permission_error": "需要 HID 權限。請執行 ./install-udev.sh，然後重新插拔接收器。",
@@ -248,7 +309,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         page.append(hero)
 
         self.device_card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        self.device_card.add_css_class("card")
+        self.device_card.add_css_class("surface-card")
         self.device_card.set_margin_top(4)
         device_icon = Gtk.Image.new_from_icon_name("drive-removable-media-symbolic")
         device_icon.set_pixel_size(24)
@@ -282,7 +343,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.receiver_name_labels: dict[int, Gtk.Label] = {}
         for pid, title_key in ((ONE_K_PID, "receiver_1k"), (FOUR_K_PID, "receiver_4k")):
             card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            card.add_css_class("card")
+            card.add_css_class("surface-card")
             card.set_margin_top(4)
             card.set_margin_bottom(4)
             name = Gtk.Label(xalign=0)
@@ -314,7 +375,8 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.pair_button, self.pair_button_label = self._action_button(
             "bluetooth-active-symbolic", "pair_button"
         )
-        self.pair_button.add_css_class("suggested-action")
+        self.pair_button.add_css_class("primary-action")
+        self.pair_button.set_size_request(180, 46)
         self.pair_button.connect("clicked", self.on_pair)
         pair_row.add_suffix(self.pair_button)
         pair_row.set_activatable_widget(self.pair_button)
@@ -344,42 +406,30 @@ class CompanionWindow(Adw.ApplicationWindow):
         specs.add_css_class("dim-label")
         page.append(specs)
 
-        dpi_group = Adw.PreferencesGroup(title="DPI stages")
-        self.bind_text(dpi_group, "set_title", "dpi_title")
-        self.bind_text(dpi_group, "set_description", "dpi_description")
-        self.dpi_spins: list[Gtk.SpinButton] = []
-        self.stage_checks: list[Gtk.CheckButton] = []
-        self.stage_rows: list[Adw.ActionRow] = []
-        group_root = None
-        for i in range(5):
-            row = Adw.ActionRow(title=f"Stage {i + 1}")
-            self.stage_rows.append(row)
-            check = Gtk.CheckButton()
-            if group_root is None:
-                group_root = check
-            else:
-                check.set_group(group_root)
-            check.connect("toggled", self.on_stage_toggled, i)
-            self.stage_checks.append(check)
-            spin = Gtk.SpinButton.new_with_range(DPI_MIN, DPI_MAX, DPI_STEP)
-            spin.set_width_chars(6)
-            spin.connect("value-changed", lambda *_: self.collect())
-            self.dpi_spins.append(spin)
-            row.add_prefix(check)
-            row.add_suffix(spin)
-            dpi_group.add(row)
-        page.append(dpi_group)
+        performance = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        performance.add_css_class("surface-card")
+        performance_title = Gtk.Label(xalign=0)
+        self.bind_text(performance_title, "set_text", "dpi_title")
+        performance_title.add_css_class("section-title")
+        performance.append(performance_title)
+        performance_description = Gtk.Label(xalign=0)
+        self.bind_text(performance_description, "set_text", "dpi_description")
+        performance_description.set_wrap(True)
+        performance_description.add_css_class("dim-label")
+        performance.append(performance_description)
 
-        poll_group = Adw.PreferencesGroup(title="Polling rate")
-        self.bind_text(poll_group, "set_title", "polling_title")
-        self.bind_text(poll_group, "set_description", "polling_description")
-        poll_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        poll_box.set_margin_top(8)
-        poll_box.set_margin_bottom(8)
+        poll_title = Gtk.Label(xalign=0)
+        self.bind_text(poll_title, "set_text", "polling_title")
+        poll_title.add_css_class("heading")
+        performance.append(poll_title)
+        poll_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        poll_box.set_homogeneous(True)
+        poll_box.set_hexpand(True)
         self.poll_buttons: dict[int, Gtk.ToggleButton] = {}
         first = None
-        for hz in sorted(POLLING_CODES):
+        for hz in (125, 500, 1000, 2000, 4000):
             btn = Gtk.ToggleButton(label=f"{hz} Hz")
+            btn.add_css_class("poll-rate")
             if first is None:
                 first = btn
             else:
@@ -387,34 +437,112 @@ class CompanionWindow(Adw.ApplicationWindow):
             btn.connect("toggled", self.on_poll_toggled, hz)
             self.poll_buttons[hz] = btn
             poll_box.append(btn)
-        poll_group.add(poll_box)
-        apply_row = Adw.ActionRow(title="Apply current settings", subtitle="Write the selected DPI stages and polling rate to the mouse.")
-        self.bind_text(apply_row, "set_title", "apply_title")
-        self.bind_text(apply_row, "set_subtitle", "apply_subtitle")
+        performance.append(poll_box)
+
+        preset_title = Gtk.Label(xalign=0)
+        self.bind_text(preset_title, "set_text", "dpi_presets")
+        preset_title.add_css_class("heading")
+        performance.append(preset_title)
+        preset_box = Gtk.FlowBox()
+        preset_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        preset_box.set_max_children_per_line(7)
+        preset_box.set_row_spacing(4)
+        preset_box.set_column_spacing(4)
+        self.preset_buttons: list[Gtk.ToggleButton] = []
+        preset_first = None
+        for dpi in (800, 1200, 1600, 2000, 2400, 2800, 3200):
+            preset = Gtk.ToggleButton(label=str(dpi))
+            preset.add_css_class("preset")
+            if preset_first is None:
+                preset_first = preset
+            else:
+                preset.set_group(preset_first)
+            preset.connect("clicked", self.on_dpi_preset, dpi)
+            self.preset_buttons.append(preset)
+            preset_box.insert(preset, -1)
+        performance.append(preset_box)
+
+        self.dpi_spins: list[Gtk.SpinButton] = []
+        self.stage_checks: list[Gtk.CheckButton] = []
+        self.stage_rows: list[Gtk.Box] = []
+        self.stage_labels: list[Gtk.Label] = []
+        self.dpi_rows_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        performance.append(self.dpi_rows_box)
+        stage_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.add_stage_button = Gtk.Button(label="＋")
+        self.bind_text(self.add_stage_button, "set_tooltip_text", "add_stage")
+        self.add_stage_button.connect("clicked", self.on_add_stage)
+        self.remove_stage_button = Gtk.Button(label="−")
+        self.bind_text(self.remove_stage_button, "set_tooltip_text", "remove_stage")
+        self.remove_stage_button.connect("clicked", self.on_remove_stage)
+        stage_controls.append(self.add_stage_button)
+        stage_controls.append(self.remove_stage_button)
+        stage_controls.append(Gtk.Box(hexpand=True))
+        performance.append(stage_controls)
+
         self.apply_button, self.apply_button_label = self._action_button(
             "emblem-ok-symbolic", "apply_button"
         )
-        self.apply_button.add_css_class("suggested-action")
+        self.apply_button.add_css_class("primary-action")
+        self.apply_button.set_halign(Gtk.Align.FILL)
+        self.apply_button.set_hexpand(True)
+        self.apply_button.set_size_request(-1, 46)
         self.apply_button.connect("clicked", lambda *_: self.on_apply())
-        apply_row.add_suffix(self.apply_button)
-        apply_row.set_activatable_widget(self.apply_button)
-        poll_group.add(apply_row)
-        page.append(poll_group)
+        performance.append(self.apply_button)
+        page.append(performance)
+        self._render_dpi_rows()
 
-        extra = Adw.PreferencesGroup(title="Sensor tuning")
-        self.bind_text(extra, "set_title", "sensor_title")
-        self.bind_text(extra, "set_description", "sensor_description")
+        extra = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        extra.add_css_class("surface-card")
+        sensor_title = Gtk.Label(xalign=0)
+        self.bind_text(sensor_title, "set_text", "sensor_title")
+        sensor_title.add_css_class("section-title")
+        extra.append(sensor_title)
+        sensor_description = Gtk.Label(xalign=0)
+        self.bind_text(sensor_description, "set_text", "sensor_description")
+        sensor_description.set_wrap(True)
+        sensor_description.add_css_class("dim-label")
+        extra.append(sensor_description)
         lod_row = Adw.ComboRow(
             title="Lift-off distance",
-            subtitle="Not currently applied to the mouse",
+            subtitle=self.tr("lod_subtitle"),
             model=Gtk.StringList.new(["1 mm", "2 mm"]),
         )
         self.bind_text(lod_row, "set_title", "lod_title")
         self.bind_text(lod_row, "set_subtitle", "lod_subtitle")
         lod_row.connect("notify::selected", lambda *_: self.collect())
-        lod_row.set_sensitive(False)
         self.lod_row = lod_row
-        extra.add(lod_row)
+        extra.append(lod_row)
+        angle_row = Adw.ActionRow(title="Angle snapping")
+        self.bind_text(angle_row, "set_title", "angle_title")
+        self.angle_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.angle_switch.connect("notify::active", lambda *_: self.collect())
+        angle_row.add_suffix(self.angle_switch)
+        angle_row.set_activatable_widget(self.angle_switch)
+        extra.append(angle_row)
+        motion_row = Adw.ActionRow(title="Motion sync")
+        self.bind_text(motion_row, "set_title", "motion_title")
+        self.motion_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.motion_switch.connect("notify::active", lambda *_: self.collect())
+        motion_row.add_suffix(self.motion_switch)
+        motion_row.set_activatable_widget(self.motion_switch)
+        extra.append(motion_row)
+        calibration_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        calibration_label = Gtk.Label(xalign=0, hexpand=True)
+        self.bind_text(calibration_label, "set_text", "calibrate_title")
+        calibration_row.append(calibration_label)
+        self.calibrate_button = Gtk.Button()
+        self.bind_text(self.calibrate_button, "set_label", "calibrate_button")
+        self.calibrate_button.add_css_class("primary-action")
+        self.calibrate_button.connect("clicked", self.on_calibrate)
+        calibration_row.append(self.calibrate_button)
+        extra.append(calibration_row)
+        self.calibration_progress = Gtk.ProgressBar(show_text=True)
+        self.calibration_progress.set_visible(False)
+        extra.append(self.calibration_progress)
+        self.calibration_status = Gtk.Label(xalign=0, wrap=True)
+        self.calibration_status.add_css_class("dim-label")
+        extra.append(self.calibration_status)
         deb_row = Adw.ComboRow(
             title="Debounce",
             subtitle="Not currently applied to the mouse",
@@ -425,7 +553,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         deb_row.connect("notify::selected", lambda *_: self.collect())
         deb_row.set_sensitive(False)
         self.deb_row = deb_row
-        extra.add(deb_row)
+        extra.append(deb_row)
         page.append(extra)
 
         # ToolbarView as window content; wrap with overlay
@@ -445,6 +573,100 @@ class CompanionWindow(Adw.ApplicationWindow):
         page.set_margin_start(20)
         page.set_margin_end(20)
         return page
+
+    def _render_dpi_rows(self) -> None:
+        was_syncing = self._syncing
+        self._syncing = True
+        self.dpi_rows_box.remove_all()
+        self.dpi_spins.clear()
+        self.stage_checks.clear()
+        self.stage_rows.clear()
+        self.stage_labels.clear()
+        self.state.active_stage = min(
+            max(0, self.state.active_stage), len(self.state.dpi_stages) - 1
+        )
+        root_check = None
+        for index, dpi in enumerate(self.state.dpi_stages):
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            row.add_css_class("stage-row")
+            check = Gtk.CheckButton()
+            if root_check is None:
+                root_check = check
+            else:
+                check.set_group(root_check)
+            check.connect("toggled", self.on_stage_toggled, index)
+            check.set_active(index == self.state.active_stage)
+            row.append(check)
+            stage_label = Gtk.Label(xalign=0)
+            stage_label.set_hexpand(True)
+            row.append(stage_label)
+            spin = Gtk.SpinButton.new_with_range(DPI_MIN, DPI_MAX, DPI_STEP)
+            spin.set_width_chars(7)
+            spin.set_value(dpi)
+            spin.connect("value-changed", self.on_dpi_value_changed)
+            row.append(spin)
+            self.dpi_rows_box.append(row)
+            self.stage_rows.append(row)
+            self.stage_labels.append(stage_label)
+            self.stage_checks.append(check)
+            self.dpi_spins.append(spin)
+        self.add_stage_button.set_sensitive(len(self.state.dpi_stages) < STAGE_COUNT)
+        self.remove_stage_button.set_sensitive(len(self.state.dpi_stages) > 1)
+        self._update_stage_labels()
+        self._update_preset_selection()
+        self._syncing = was_syncing
+
+    def _update_stage_labels(self) -> None:
+        for index, label in enumerate(self.stage_labels, start=1):
+            label.set_text(
+                f"{self.tr('stage')} {index}"
+                if self.language == "en"
+                else f"{self.tr('stage')}{index} 段"
+            )
+
+    def _update_preset_selection(self) -> None:
+        if not self.dpi_spins:
+            return
+        current = int(self.dpi_spins[self.state.active_stage].get_value())
+        presets = (800, 1200, 1600, 2000, 2400, 2800, 3200)
+        for value, button in zip(presets, self.preset_buttons):
+            button.set_active(value == current)
+
+    def on_add_stage(self, *_args) -> None:
+        self.collect()
+        if len(self.state.dpi_stages) >= STAGE_COUNT:
+            self.toast_msg(self.tr("stage_limit"))
+            return
+        self.state.dpi_stages.append(self.state.dpi_stages[-1])
+        self.state.active_stage = len(self.state.dpi_stages) - 1
+        self._syncing = True
+        self._render_dpi_rows()
+        self._syncing = False
+        self.collect()
+
+    def on_remove_stage(self, *_args) -> None:
+        self.collect()
+        if len(self.state.dpi_stages) <= 1:
+            self.toast_msg(self.tr("stage_minimum"))
+            return
+        selected = self.state.active_stage
+        self.state.dpi_stages.pop(selected)
+        self.state.active_stage = min(selected, len(self.state.dpi_stages) - 1)
+        self._syncing = True
+        self._render_dpi_rows()
+        self._syncing = False
+        self.collect()
+
+    def on_dpi_value_changed(self, *_args) -> None:
+        self.collect()
+        self._update_preset_selection()
+
+    def on_dpi_preset(self, _button, dpi: int) -> None:
+        if not self.dpi_spins:
+            return
+        self.dpi_spins[self.state.active_stage].set_value(dpi)
+        self.collect()
+        self._update_preset_selection()
 
     def _action_button(self, icon_name: str, text_key: str):
         button = Gtk.Button()
@@ -493,12 +715,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.receiver_row.set_selected(selected_receiver)
         self.lod_row.set_selected(selected_lod)
         self.deb_row.set_selected(selected_debounce)
-        for index, row in enumerate(self.stage_rows, start=1):
-            row.set_title(
-                f"{self.tr('stage')} {index}"
-                if self.language == "en"
-                else f"{self.tr('stage')}{index} 段"
-            )
+        self._update_stage_labels()
         self._changing_language = False
         self._syncing = True
         self.push_ui()
@@ -528,10 +745,14 @@ class CompanionWindow(Adw.ApplicationWindow):
     def show_pair_message(self, line: str) -> None:
         self._last_pair_output = line
         self.pair_result_label.set_text(self._translated_pair_output(line))
+        if "status 3" in line.lower():
+            self.pair_result_label.add_css_class("pair-failure")
+        else:
+            self.pair_result_label.remove_css_class("pair-failure")
 
     def _stat_card(self, caption: str, key: str | None = None) -> tuple[Gtk.Box, Gtk.Label]:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.add_css_class("card")
+        box.add_css_class("surface-card")
         box.set_margin_top(3)
         box.set_margin_bottom(3)
         value = Gtk.Label(label="—")
@@ -558,6 +779,8 @@ class CompanionWindow(Adw.ApplicationWindow):
     def push_ui(self) -> None:
         self._syncing = True
         st = self.state
+        if len(self.dpi_spins) != len(st.dpi_stages):
+            self._render_dpi_rows()
         connected = bool(st.connected)
         self.device_status_icon.set_from_icon_name(
             "emblem-ok-symbolic" if connected else "process-stop-symbolic"
@@ -582,9 +805,14 @@ class CompanionWindow(Adw.ApplicationWindow):
         if 0 <= st.active_stage < len(self.stage_checks):
             self.stage_checks[st.active_stage].set_active(True)
         btn = self.poll_buttons.get(st.polling_hz)
+        if btn is None and 250 not in self.poll_buttons:
+            self.state.polling_hz = 500
+            btn = self.poll_buttons.get(500)
         if btn:
             btn.set_active(True)
         self.lod_row.set_selected(0 if st.lod_mm <= 1 else 1)
+        self.angle_switch.set_active(st.angle_snapping)
+        self.motion_switch.set_active(st.motion_sync)
         mapping = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4}
         self.deb_row.set_selected(mapping.get(st.debounce_ms, 0))
         self._syncing = False
@@ -610,8 +838,9 @@ class CompanionWindow(Adw.ApplicationWindow):
         else:
             self._pair_notice_key = "pair_initial"
         if self._last_pair_output and len(connected) == 1 and selected_pid in connected:
-            self.pair_result_label.set_text(self._translated_pair_output(self._last_pair_output))
+            self.show_pair_message(self._last_pair_output)
         else:
+            self.pair_result_label.remove_css_class("pair-failure")
             self.pair_result_label.set_text(self.tr(self._pair_notice_key))
 
     def on_receiver_selected(self, *_args) -> None:
@@ -625,6 +854,7 @@ class CompanionWindow(Adw.ApplicationWindow):
             return
         self.state.active_stage = index
         self.collect()
+        self._update_preset_selection()
 
     def on_poll_toggled(self, button: Gtk.ToggleButton, hz: int) -> None:
         if self._syncing or not button.get_active():
@@ -637,12 +867,38 @@ class CompanionWindow(Adw.ApplicationWindow):
             return
         self.state.dpi_stages = [int(s.get_value()) for s in self.dpi_spins]
         self.state.lod_mm = 1 if self.lod_row.get_selected() == 0 else 2
+        self.state.angle_snapping = self.angle_switch.get_active()
+        self.state.motion_sync = self.motion_switch.get_active()
         debounce_index = int(self.deb_row.get_selected())
         debounce = [0, 1, 2, 4, 8][debounce_index] if debounce_index < 5 else 0
         self.state.debounce_ms = debounce
         self.stat_dpi[1].set_text(f"{self.state.dpi:,}")
         self.stat_poll[1].set_text(f"{self.state.polling_hz} Hz")
         save_profile(self.state)
+
+    def on_calibrate(self, *_args) -> None:
+        """Show UIX's three-second calibration status flow, without claiming HID calibration."""
+        self.calibrate_button.set_sensitive(False)
+        self.calibration_progress.set_visible(True)
+        self.calibration_progress.set_fraction(0)
+        start_time = GLib.get_monotonic_time()
+
+        def tick() -> bool:
+            elapsed = (GLib.get_monotonic_time() - start_time) / 1_000_000
+            fraction = min(elapsed / 3.0, 1.0)
+            remaining = max(0, 3 - int(elapsed))
+            self.calibration_progress.set_fraction(fraction)
+            self.calibration_progress.set_text(
+                self.tr("calibration_wait", seconds=remaining)
+            )
+            if fraction >= 1.0:
+                self.calibration_status.set_text(self.tr("calibration_done"))
+                self.calibration_button.set_sensitive(True)
+                return False
+            return True
+
+        GLib.timeout_add(50, tick)
+
 
     def on_apply(self) -> None:
         self.collect()

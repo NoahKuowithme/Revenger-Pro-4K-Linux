@@ -27,6 +27,11 @@ with:
 flatpak-builder --user --install --force-clean build-dir io.noah.revengerpro4k.yml
 ```
 
+The release manifest builds a pinned Git commit. To build uncommitted local
+changes, use a temporary copy of the manifest with its Git source replaced by
+`type: dir` and `path: .`, then run the same command against that copy. Keep the
+release manifest pinned to a reviewed, published commit for Flathub.
+
 ## Before submitting to Flathub
 
 - Build and launch the Flatpak on both supported architectures, then verify

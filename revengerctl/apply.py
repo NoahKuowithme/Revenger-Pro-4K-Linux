@@ -12,6 +12,9 @@ from .protocol import (
     request_status,
     set_active_stage,
     set_dpi_stage,
+    set_angle_snapping,
+    set_lod,
+    set_motion_sync,
     set_polling,
 )
 from .profiles import load_profile
@@ -76,10 +79,24 @@ def apply_polling(hz: int) -> str:
 
 
 def apply(state: MouseState) -> str:
-    """Write polling, five DPI stages, and the selected active DPI stage."""
+    """Write performance and verified 3395 sensor settings.
+
+    The device has five physical DPI slots. Unconfigured trailing slots repeat
+    the last visible stage because the currently verified protocol does not
+    expose an active-stage-count setting.
+    """
     reports = [set_polling(state.polling_hz)]
+    stages = list(state.dpi_stages[:5])
+    if not stages:
+        raise ValueError("At least one DPI stage is required")
+    stages.extend([stages[-1]] * (5 - len(stages)))
     reports.extend(
-        set_dpi_stage(index, dpi) for index, dpi in enumerate(state.dpi_stages[:5])
+        set_dpi_stage(index, dpi) for index, dpi in enumerate(stages)
     )
     reports.append(set_active_stage(state.active_stage))
+    reports.extend([
+        set_lod(state.lod_mm),
+        set_angle_snapping(state.angle_snapping),
+        set_motion_sync(state.motion_sync),
+    ])
     return _write_reports(reports)

@@ -30,7 +30,7 @@ DPI_MIN = 50
 DPI_MAX = 26000
 DPI_STEP = 50
 STAGE_COUNT = 5
-DEFAULT_STAGES = (400, 800, 1600, 3200, 6400)
+DEFAULT_STAGES = (800, 1200, 1600)
 
 
 def _checksum(data: bytes) -> int:
@@ -169,9 +169,19 @@ def set_active_stage(stage: int) -> bytes:
 
 
 def set_lod(mm: int) -> bytes:
-    # 1 mm or 2 mm lift-off, typical Pixart 3395.
-    code = 0x01 if mm <= 1 else 0x02
-    return _out(0x0B, bytes([code]))
+    """Set the UIX 3395 lift-detection selection (0=1 mm, 1=2 mm)."""
+    if mm not in (1, 2):
+        raise ValueError("Lift-off distance must be 1 or 2 mm")
+    return _mouse_config_write(0x020A, _flash_data_with_checksum(bytes([mm - 1])))
+
+
+def set_motion_sync(enabled: bool) -> bytes:
+    return _mouse_config_write(0x020E, _flash_data_with_checksum(bytes([int(enabled)])))
+
+
+def set_angle_snapping(enabled: bool) -> bytes:
+    """Set UIX's linearCorrectionEnable (labelled Angle snapping)."""
+    return _mouse_config_write(0x0212, _flash_data_with_checksum(bytes([int(enabled)])))
 
 
 def set_debounce_ms(ms: int) -> bytes:
@@ -197,6 +207,8 @@ class MouseState:
     active_stage: int = 1
     polling_hz: int = 1000
     lod_mm: int = 1
+    angle_snapping: bool = False
+    motion_sync: bool = False
     debounce_ms: int = 0
     battery: int | None = None
     feature06: bytes = b""

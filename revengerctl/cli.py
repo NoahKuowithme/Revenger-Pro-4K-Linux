@@ -171,21 +171,24 @@ def main(argv: list[str] | None = None) -> int:
     state = refresh()
 
     if args.cmd == "status":
-        print(f"connected: {state.connected}")
-        print(f"name:      {state.name}")
-        print(f"usb:       {state.vid_pid or '-'}")
-        print(f"hidraw:    {state.hidraw or '-'}")
-        print(f"access:    {'ok' if state.access_ok else state.access_error or 'no'}")
+        print("Revenger Pro 4K — device status\n")
+        print(f"Connection : {'Connected' if state.connected else 'Not connected'}")
+        print(f"Device     : {state.name}")
+        print(f"USB ID     : {state.vid_pid or '-'}")
+        print(f"HID device : {state.hidraw or '-'}")
+        print(f"Permission : {'Ready' if state.access_ok else state.access_error or 'Unavailable'}")
+        print("\nSaved settings (readback is not supported yet)")
         print(
-            f"dpi:       {state.dpi_stages}  "
-            f"(profile active stage {state.active_stage + 1}; not read from mouse)"
+            f"DPI stages : {', '.join(str(value) for value in state.dpi_stages)}"
+            f"  (active: {state.active_stage + 1})"
         )
-        print(f"polling:   {state.polling_hz} Hz")
-        print(f"lod:       {state.lod_mm} mm")
-        print(f"debounce:  {state.debounce_ms} ms")
-        print(f"battery:   {state.battery if state.battery is not None else 'n/a'}")
+        print(f"Polling    : {state.polling_hz} Hz")
+        print(f"Lift-off   : {state.lod_mm} mm")
+        print(f"Angle snap : {'On' if state.angle_snapping else 'Off'}")
+        print(f"Motion sync: {'On' if state.motion_sync else 'Off'}")
+        print(f"Battery    : {state.battery if state.battery is not None else 'Unknown'}")
         if state.feature06:
-            print(f"feature06: {state.feature06.hex()}")
+            print(f"Raw report : {state.feature06.hex()}")
         return 0 if state.connected else 1
 
     if args.cmd == "dpi":
@@ -197,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 2
+        while len(state.dpi_stages) < args.stage:
+            state.dpi_stages.append(state.dpi_stages[-1])
         state.dpi_stages[args.stage - 1] = args.value
         state.active_stage = args.stage - 1
         if state.access_ok:

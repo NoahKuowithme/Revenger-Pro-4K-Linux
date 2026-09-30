@@ -17,13 +17,15 @@ def load_profile(state: MouseState) -> MouseState:
     except (OSError, json.JSONDecodeError):
         return state
     stages = data.get("dpi_stages")
-    if isinstance(stages, list) and len(stages) >= 5:
-        state.dpi_stages = [int(x) for x in stages[:5]]
+    if isinstance(stages, list) and 1 <= len(stages) <= 5:
+        state.dpi_stages = [int(x) for x in stages]
     else:
         state.dpi_stages = list(DEFAULT_STAGES)
     state.active_stage = int(data.get("active_stage", state.active_stage))
     state.polling_hz = int(data.get("polling_hz", state.polling_hz))
     state.lod_mm = int(data.get("lod_mm", state.lod_mm))
+    state.angle_snapping = bool(data.get("angle_snapping", state.angle_snapping))
+    state.motion_sync = bool(data.get("motion_sync", state.motion_sync))
     state.debounce_ms = int(data.get("debounce_ms", state.debounce_ms))
     return state
 
@@ -35,6 +37,8 @@ def save_profile(state: MouseState) -> Path:
         "active_stage": state.active_stage,
         "polling_hz": state.polling_hz,
         "lod_mm": state.lod_mm,
+        "angle_snapping": state.angle_snapping,
+        "motion_sync": state.motion_sync,
         "debounce_ms": state.debounce_ms,
     }
     PROFILE_PATH.write_text(json.dumps(payload, indent=2) + "\n")

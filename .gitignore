@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+Windows referrence/
 
 # Extracted proprietary Windows UIX files are local research material, not Linux app assets.
 references/uix-windows-extract/*

@@ -20,8 +20,9 @@ cd ~/Desktop/Revenger-Pro-4K-Linux
 ```
 
 The GUI has **Mouse settings** and **Receiver connection** pages; choose English
-or Traditional Chinese from the header. **Apply to mouse** is in the polling-rate
-section beside the DPI controls.
+or Traditional Chinese from the header. The performance card combines polling
+rate and DPI, while Sensor tuning includes LOD, angle snapping and Motion Sync.
+Use **Apply to mouse** to send all of those settings together.
 
 ### Customize the GUI
 
@@ -82,10 +83,19 @@ logged-in desktop session and inspect the node's ACL with
 - `dpi` and `polling` use UIX 1.0.0.42-derived flash-write frames sent using
   HID SetFeature, matching UIX's native route for command reports. The `dpi`
   command writes the requested stage and activates it; `apply` writes polling,
-  all five DPI stages, and the selected active stage with a short gap between
-  reports. DPI changes still need physical validation.
-- Lift-off and debounce are not implemented; the GUI shows their saved profile
-  values but disables the controls and labels them as unapplied.
+  all five physical DPI slots, and the selected active stage with a short gap
+  between reports. Unconfigured trailing slots repeat the last visible stage
+  because the verified protocol has no stage-count control. DPI changes still
+  need physical validation.
+- LOD, angle snapping and Motion Sync fields and sensor support for the PixArt
+  3395 were confirmed against the supplied UIX 1.0.0.42 reference. The Linux
+  app writes these values with the main Apply action, but cannot read them back
+  yet; verify the behavior on the mouse. Angle snapping is UIX's
+  `linearCorrectionEnable` setting.
+- UIX's calibration screen runs a three-second status timer but contains no
+  calibration HID command. The Linux button mirrors that visible timer and
+  says so; it does not claim to calibrate the surface. Debounce is not yet
+  applied.
 - `status` does not yet read the five DPI values back from mouse flash, so its
   displayed DPI stages and active-stage selection come from the local profile.
   The polling-rate field is also not yet confirmed as a reliable hardware
@@ -97,7 +107,6 @@ logged-in desktop session and inspect the node's ACL with
 
 ## Reference files
 
-The `references/` folder documents local research material. The extracted
-Windows UIX DLLs/resources and the old desktop launcher are intentionally
-ignored by Git; they are not needed to run the Linux app. The active launcher
-is `revenger-pro-4k.desktop`.
+The extracted Windows UIX installer and its `Windows referrence/` folder are
+local research material and intentionally ignored by Git. They are not needed
+to run the Linux app. The active launcher is `revenger-pro-4k.desktop`.
