@@ -55,6 +55,10 @@ To add the app to the desktop application menu with its icon, run:
 ./install-app.sh
 ```
 
+Flatpak packaging for a future Flathub submission is documented in
+[`FLATPAK.md`](FLATPAK.md). The Flatpak needs host udev access to the receiver;
+the sandbox cannot install the project's udev rule itself.
+
 Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
 
 ## Allow HID access (once)
@@ -89,6 +93,7 @@ logged-in desktop session and inspect the node's ACL with
 - Pair-status decoding is based on UIX's native callback layout and still needs
   a hardware run to confirm the Linux report offset.
 - Not affiliated with COUGAR / Compucase.
+- Licensed under the GNU General Public License v3.0 or later; see [LICENSE](LICENSE).
 
 ## Reference files
 
