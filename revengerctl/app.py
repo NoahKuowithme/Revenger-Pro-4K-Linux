@@ -25,45 +25,27 @@ from revengerctl.profiles import save_profile  # noqa: E402
 from revengerctl.protocol import DPI_MAX, DPI_MIN, DPI_STEP, MouseState, POLLING_CODES  # noqa: E402
 
 CSS = b"""
-window {
-  background-color: #0b0c10;
-}
 .hero-title {
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: 2px;
-}
-.hero-sub {
-  color: #c5c6c7;
+  font-weight: 750;
+  font-size: 24px;
 }
 .stat-value {
   font-weight: 700;
-  font-size: 22px;
-  color: #66fcf1;
+  font-size: 20px;
 }
-.accent-card {
-  background: #1f2833;
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid #45a29e;
-}
-.receiver-card {
-  background: #151c24;
-  border: 1px solid #33434f;
-  border-radius: 14px;
-  padding: 14px;
+.card {
+  padding: 10px;
 }
 .receiver-name {
   font-weight: 700;
-  font-size: 16px;
-}
-.receiver-state {
-  color: #aebbc5;
+  font-size: 15px;
 }
 .pair-result {
-  background: #151c24;
-  border-radius: 10px;
-  padding: 10px 12px;
+  padding: 8px;
+}
+.device-path {
+  font-family: monospace;
+  font-weight: 650;
 }
 """
 
@@ -78,6 +60,10 @@ TEXT = {
         "app_subtitle": "Linux companion · built by AI",
         "connected": "USB control · {name} · {vid_pid} · {hidraw}\n{access}",
         "not_connected": "No receiver control interface detected.",
+        "device_title": "USB device",
+        "device_connected": "Connected",
+        "device_disconnected": "Not connected",
+        "device_access": "HID access available",
         "access_ok": "HID access OK",
         "connection_title": "Wireless connection",
         "connection_description": "The mouse pairs with one receiver at a time. USB detection does not confirm pairing; disconnect the other receiver before switching.",
@@ -134,6 +120,10 @@ TEXT = {
         "app_subtitle": "Linux 控制程式 · AI 製作",
         "connected": "USB 控制介面 · {name} · {vid_pid} · {hidraw}\n{access}",
         "not_connected": "沒有偵測到接收器控制介面。",
+        "device_title": "USB 裝置",
+        "device_connected": "已連線",
+        "device_disconnected": "未連線",
+        "device_access": "HID 權限正常",
         "access_ok": "HID 權限正常",
         "connection_title": "無線連線",
         "connection_description": "滑鼠一次只能配對一個接收器。偵測到 USB 不代表已配對；切換前請拔除另一個接收器。",
@@ -186,7 +176,7 @@ TEXT = {
 class CompanionWindow(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application) -> None:
         super().__init__(application=app, title=APP_TITLE)
-        self.set_default_size(920, 720)
+        self.set_default_size(820, 640)
         self.state = MouseState()
         self._syncing = False
         self._pairing = False
@@ -257,9 +247,31 @@ class CompanionWindow(Adw.ApplicationWindow):
         hero.append(built)
         page.append(hero)
 
-        self.status_label = Gtk.Label(xalign=0)
-        self.status_label.set_wrap(True)
-        self.connection_page.append(self.status_label)
+        self.device_card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        self.device_card.add_css_class("card")
+        self.device_card.set_margin_top(4)
+        device_icon = Gtk.Image.new_from_icon_name("drive-removable-media-symbolic")
+        device_icon.set_pixel_size(24)
+        self.device_card.append(device_icon)
+        device_details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        device_title = Gtk.Label(xalign=0)
+        self.bind_text(device_title, "set_text", "device_title")
+        device_title.add_css_class("heading")
+        device_details.append(device_title)
+        self.device_status_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.device_status_icon = Gtk.Image.new_from_icon_name("process-stop-symbolic")
+        self.device_status_label = Gtk.Label(xalign=0)
+        self.device_status_row.append(self.device_status_icon)
+        self.device_status_row.append(self.device_status_label)
+        self.device_path_label = Gtk.Label(xalign=0)
+        self.device_path_label.add_css_class("device-path")
+        self.device_access_label = Gtk.Label(xalign=0)
+        self.device_access_label.add_css_class("dim-label")
+        device_details.append(self.device_status_row)
+        device_details.append(self.device_path_label)
+        device_details.append(self.device_access_label)
+        self.device_card.append(device_details)
+        self.connection_page.append(self.device_card)
 
         pair_group = Adw.PreferencesGroup(title="Wireless connection")
         self.bind_text(pair_group, "set_title", "connection_title")
@@ -270,7 +282,9 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.receiver_name_labels: dict[int, Gtk.Label] = {}
         for pid, title_key in ((ONE_K_PID, "receiver_1k"), (FOUR_K_PID, "receiver_4k")):
             card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            card.add_css_class("receiver-card")
+            card.add_css_class("card")
+            card.set_margin_top(4)
+            card.set_margin_bottom(4)
             name = Gtk.Label(xalign=0)
             self.bind_text(name, "set_text", title_key)
             name.add_css_class("receiver-name")
@@ -297,8 +311,10 @@ class CompanionWindow(Adw.ApplicationWindow):
         )
         self.bind_text(pair_row, "set_title", "pair_title")
         self.bind_text(pair_row, "set_subtitle", "pair_subtitle")
-        self.pair_button = Gtk.Button()
-        self.bind_text(self.pair_button, "set_label", "pair_button")
+        self.pair_button, self.pair_button_label = self._action_button(
+            "bluetooth-active-symbolic", "pair_button"
+        )
+        self.pair_button.add_css_class("suggested-action")
         self.pair_button.connect("clicked", self.on_pair)
         pair_row.add_suffix(self.pair_button)
         pair_row.set_activatable_widget(self.pair_button)
@@ -375,8 +391,9 @@ class CompanionWindow(Adw.ApplicationWindow):
         apply_row = Adw.ActionRow(title="Apply current settings", subtitle="Write the selected DPI stages and polling rate to the mouse.")
         self.bind_text(apply_row, "set_title", "apply_title")
         self.bind_text(apply_row, "set_subtitle", "apply_subtitle")
-        self.apply_button = Gtk.Button()
-        self.bind_text(self.apply_button, "set_label", "apply_button")
+        self.apply_button, self.apply_button_label = self._action_button(
+            "emblem-ok-symbolic", "apply_button"
+        )
         self.apply_button.add_css_class("suggested-action")
         self.apply_button.connect("clicked", lambda *_: self.on_apply())
         apply_row.add_suffix(self.apply_button)
@@ -422,12 +439,24 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.reload()
 
     def _make_page(self) -> Gtk.Box:
-        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        page.set_margin_top(24)
-        page.set_margin_bottom(32)
-        page.set_margin_start(28)
-        page.set_margin_end(28)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        page.set_margin_top(16)
+        page.set_margin_bottom(20)
+        page.set_margin_start(20)
+        page.set_margin_end(20)
         return page
+
+    def _action_button(self, icon_name: str, text_key: str):
+        button = Gtk.Button()
+        button.set_halign(Gtk.Align.END)
+        button.add_css_class("pill")
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        content.append(Gtk.Image.new_from_icon_name(icon_name))
+        label = Gtk.Label()
+        self.bind_text(label, "set_text", text_key)
+        content.append(label)
+        button.set_child(content)
+        return button, label
 
     def tr(self, key: str, **values: object) -> str:
         return TEXT[self.language][key].format(**values)
@@ -502,7 +531,9 @@ class CompanionWindow(Adw.ApplicationWindow):
 
     def _stat_card(self, caption: str, key: str | None = None) -> tuple[Gtk.Box, Gtk.Label]:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.add_css_class("accent-card")
+        box.add_css_class("card")
+        box.set_margin_top(3)
+        box.set_margin_bottom(3)
         value = Gtk.Label(label="—")
         value.add_css_class("stat-value")
         value.set_xalign(0)
@@ -527,13 +558,22 @@ class CompanionWindow(Adw.ApplicationWindow):
     def push_ui(self) -> None:
         self._syncing = True
         st = self.state
-        if st.connected:
-            access = self.tr("access_ok") if st.access_ok else st.access_error
-            self.status_label.set_text(
-                self.tr("connected", name=st.name, vid_pid=st.vid_pid, hidraw=st.hidraw, access=access)
-            )
-        else:
-            self.status_label.set_text(self.tr("not_connected"))
+        connected = bool(st.connected)
+        self.device_status_icon.set_from_icon_name(
+            "emblem-ok-symbolic" if connected else "process-stop-symbolic"
+        )
+        self.device_status_icon.set_css_classes(
+            ["success" if connected else "dim-label"]
+        )
+        self.device_status_label.set_text(
+            self.tr("device_connected" if connected else "device_disconnected")
+        )
+        self.device_path_label.set_text(st.hidraw if connected and st.hidraw else "—")
+        self.device_path_label.set_visible(connected)
+        self.device_access_label.set_text(
+            self.tr("access_ok") if st.access_ok else (st.access_error or "")
+        )
+        self.device_access_label.set_visible(connected and not st.access_ok)
         self.stat_dpi[1].set_text(f"{st.dpi:,}")
         self.stat_poll[1].set_text(f"{st.polling_hz} Hz")
         self.stat_battery[1].set_text(f"{st.battery}%" if st.battery is not None else "—")
