@@ -72,6 +72,11 @@ Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
 ./install-udev.sh
 ```
 
+The Flatpak shows a first-run setup guide when it detects the receiver but
+cannot open its HID device. Copy the displayed command into a host terminal,
+approve the administrator prompt once, then reconnect the receiver. The app
+does not run host commands from inside the Flatpak sandbox.
+
 Then unplug and replug the dongle. This grants the app permission to open the HID interface.
 If the app still reports an access error, check that you launched it from your
 logged-in desktop session and inspect the node's ACL with

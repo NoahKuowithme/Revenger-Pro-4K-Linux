@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import subprocess
+import shlex
 import sys
 import threading
 from pathlib import Path
@@ -157,6 +158,12 @@ TEXT = {
         "debounce_title": "Debounce",
         "debounce_subtitle": "Not currently applied to the mouse",
         "permission_error": "HID permission needed. Run ./install-udev.sh, then replug the receiver.",
+        "permission_setup": "Set up USB access",
+        "permission_setup_heading": "One-time receiver setup",
+        "permission_setup_body": "Linux found the receiver, but the current user cannot open its HID device. Install this udev rule once on the host. Copy the command below, paste it into a terminal, and approve the administrator prompt. Then unplug and reconnect the receiver. The Flatpak cannot install host rules by itself.",
+        "permission_setup_copy": "Copy setup command",
+        "permission_setup_later": "Later",
+        "permission_setup_copied": "Command copied. Paste it into a terminal and approve the administrator prompt.",
         "settings_sent": "Settings sent to {path}; verify them on the mouse.",
     },
     "zh": {
@@ -229,6 +236,12 @@ TEXT = {
         "debounce_title": "按鍵去抖",
         "debounce_subtitle": "目前不會套用至滑鼠",
         "permission_error": "需要 HID 權限。請執行 ./install-udev.sh，然後重新插拔接收器。",
+        "permission_setup": "設定 USB 權限",
+        "permission_setup_heading": "首次接收器設定",
+        "permission_setup_body": "已找到接收器，但目前使用者無法開啟 HID 裝置。請在主機安裝一次 udev 規則：複製下方指令、貼到終端機並核准管理員提示，再拔除並重新接上接收器。Flatpak 無法自行安裝主機規則。",
+        "permission_setup_copy": "複製設定指令",
+        "permission_setup_later": "稍後",
+        "permission_setup_copied": "指令已複製。請貼到終端機並核准管理員提示。",
         "settings_sent": "設定已傳送至 {path}；請在滑鼠上確認是否生效。",
     },
 }
@@ -246,6 +259,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         self._localized_text: list[tuple[object, str, str]] = []
         self._last_pair_output: str | None = None
         self._pair_notice_key = "pair_initial"
+        self._permission_dialog_shown = False
 
         provider = Gtk.CssProvider()
         provider.load_from_data(CSS)
@@ -332,6 +346,12 @@ class CompanionWindow(Adw.ApplicationWindow):
         device_details.append(self.device_path_label)
         device_details.append(self.device_access_label)
         self.device_card.append(device_details)
+        self.device_card.append(Gtk.Box(hexpand=True))
+        self.permission_setup_button = Gtk.Button()
+        self.bind_text(self.permission_setup_button, "set_label", "permission_setup")
+        self.permission_setup_button.add_css_class("pill")
+        self.permission_setup_button.connect("clicked", self.show_permission_setup)
+        self.device_card.append(self.permission_setup_button)
         self.connection_page.append(self.device_card)
 
         pair_group = Adw.PreferencesGroup(title="Wireless connection")
@@ -777,6 +797,13 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.receiver_interfaces = list_revenger_interfaces()
         self.state = refresh()
         self.push_ui()
+        if (
+            self.state.connected
+            and not self.state.access_ok
+            and self.state.access_error.startswith("Cannot open ")
+            and not self._permission_dialog_shown
+        ):
+            self.show_permission_setup()
         return True
 
     def push_ui(self) -> None:
@@ -800,6 +827,7 @@ class CompanionWindow(Adw.ApplicationWindow):
             self.tr("access_ok") if st.access_ok else (st.access_error or "")
         )
         self.device_access_label.set_visible(connected and not st.access_ok)
+        self.permission_setup_button.set_visible(connected and not st.access_ok)
         self.stat_dpi[1].set_text(f"{st.dpi:,}")
         self.stat_poll[1].set_text(f"{st.polling_hz} Hz")
         self.stat_battery[1].set_text(f"{st.battery}%" if st.battery is not None else "—")
@@ -820,6 +848,56 @@ class CompanionWindow(Adw.ApplicationWindow):
         self.deb_row.set_selected(mapping.get(st.debounce_ms, 0))
         self._syncing = False
         self.update_pair_availability()
+
+    def show_permission_setup(self, *_args) -> None:
+        if self._permission_dialog_shown:
+            return
+        self._permission_dialog_shown = True
+        rules_path = ROOT / "udev" / "99-revenger-pro-4k.rules"
+        try:
+            rules = rules_path.read_text().strip()
+        except OSError as exc:
+            self.toast_msg(str(exc))
+            return
+        script = (
+            "cat > /etc/udev/rules.d/99-revenger-pro-4k.rules <<'REVENGER_RULES'\n"
+            f"{rules}\n"
+            "REVENGER_RULES\n"
+            "udevadm control --reload-rules\n"
+            "udevadm trigger --subsystem-match=hidraw --subsystem-match=usb"
+        )
+        command = f"sudo sh -c {shlex.quote(script)}"
+
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            heading=self.tr("permission_setup_heading"),
+            body=self.tr("permission_setup_body"),
+        )
+        command_view = Gtk.TextView()
+        command_view.set_editable(False)
+        command_view.set_cursor_visible(False)
+        command_view.set_monospace(True)
+        command_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        command_view.get_buffer().set_text(command)
+        command_scroll = Gtk.ScrolledWindow()
+        command_scroll.set_min_content_height(150)
+        command_scroll.set_child(command_view)
+        dialog.set_extra_child(command_scroll)
+        dialog.add_response("later", self.tr("permission_setup_later"))
+        dialog.add_response("copy", self.tr("permission_setup_copy"))
+        dialog.set_response_appearance("copy", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("copy")
+        dialog.set_close_response("later")
+        dialog.connect("response", self.on_permission_setup_response, command)
+        dialog.present()
+
+    def on_permission_setup_response(
+        self, _dialog, response: str, command: str
+    ) -> None:
+        if response != "copy":
+            return
+        self.get_display().get_clipboard().set_text(command)
+        self.toast_msg(self.tr("permission_setup_copied"))
 
     def update_pair_availability(self) -> None:
         connected = {
@@ -908,7 +986,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         try:
             path = apply(self.state)
         except PermissionError:
-            self.toast_msg(self.tr("permission_error"))
+            self.show_permission_setup()
             return
         except Exception as exc:
             self.toast_msg(str(exc))

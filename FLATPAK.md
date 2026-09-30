@@ -18,6 +18,10 @@ project's `udev/99-revenger-pro-4k.rules` on the host and reconnect the
 receiver. This requires administrator access and is a significant installation
 prerequisite to disclose in the Flathub listing.
 
+The app includes a first-run guide that copies the exact host setup command for
+the user to paste into a terminal. It does not spawn host commands or request
+administrator access itself.
+
 ## Local build
 
 After installing `flatpak-builder` and the Flathub remote, build and install

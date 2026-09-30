@@ -18,6 +18,7 @@ modules:
     build-commands:
       - install -d /app/share/revenger-pro-4k
       - cp -a revengerctl revenger-pro-4k revengerctl-cli /app/share/revenger-pro-4k/
+      - cp -a udev /app/share/revenger-pro-4k/
       - install -Dm755 flatpak-launcher.sh /app/bin/revenger-pro-4k
       - install -Dm644 io.noah.revengerpro4k.desktop /app/share/applications/io.noah.revengerpro4k.desktop
       - install -Dm644 icons/io.noah.revengerpro4k.svg /app/share/icons/hicolor/scalable/apps/io.noah.revengerpro4k.svg
