@@ -1,0 +1,121 @@
+.gitignore
+AGENTS.md
+build-dir/.gitignore
+build-dir/export/share/applications/io.noah.revengerpro4k.desktop
+build-dir/export/share/icons/hicolor/scalable/apps/io.noah.revengerpro4k.svg
+build-dir/export/share/metainfo/io.noah.revengerpro4k.metainfo.xml
+build-dir/files/bin/revenger-pro-4k
+build-dir/files/manifest.json
+build-dir/files/share/app-info/icons/flatpak/128x128/io.noah.revengerpro4k.jxl
+build-dir/files/share/app-info/icons/flatpak/128x128@2/io.noah.revengerpro4k.jxl
+build-dir/files/share/app-info/icons/flatpak/48x48/io.noah.revengerpro4k.jxl
+build-dir/files/share/app-info/icons/flatpak/64x64/io.noah.revengerpro4k.jxl
+build-dir/files/share/app-info/icons/flatpak/64x64@2/io.noah.revengerpro4k.jxl
+build-dir/files/share/app-info/xmls/io.noah.revengerpro4k.xml.gz
+build-dir/files/share/applications/io.noah.revengerpro4k.desktop
+build-dir/files/share/icons/hicolor/scalable/apps/io.noah.revengerpro4k.svg
+build-dir/files/share/metainfo/io.noah.revengerpro4k.metainfo.xml
+build-dir/files/share/revenger-pro-4k/revenger-pro-4k
+build-dir/files/share/revenger-pro-4k/revengerctl-cli
+build-dir/files/share/revenger-pro-4k/revengerctl/__init__.py
+build-dir/files/share/revenger-pro-4k/revengerctl/app.py
+build-dir/files/share/revenger-pro-4k/revengerctl/apply.py
+build-dir/files/share/revenger-pro-4k/revengerctl/cli.py
+build-dir/files/share/revenger-pro-4k/revengerctl/device.py
+build-dir/files/share/revenger-pro-4k/revengerctl/profiles.py
+build-dir/files/share/revenger-pro-4k/revengerctl/protocol.py
+build-dir/files/share/revenger-pro-4k/udev/99-revenger-pro-4k.rules
+build-dir/metadata
+flatpak-launcher.sh
+FLATPAK.md
+icons/io.github.noahkuowithme.Revenger-Pro-4K-Linux.png
+icons/io.github.noahkuowithme.Revenger-Pro-4K-Linux.svg
+install-app.sh
+install-udev.sh
+INSTRUCTIONS.md
+io.github.noahkuowithme.Revenger-Pro-4K-Linux.desktop
+io.github.noahkuowithme.Revenger-Pro-4K-Linux.metainfo.xml
+io.github.noahkuowithme.Revenger-Pro-4K-Linux.yml
+io.noah.revengerpro4k.yml
+LICENSE
+README.md
+reference/legacy-launcher/README.md
+reference/legacy-launcher/Revenger Pro 4K.desktop
+reference/README.md
+reference/uix-windows-extract/costura.costura.dll.compressed
+reference/uix-windows-extract/costura.costura.pdb.compressed
+reference/uix-windows-extract/costura.metadata
+reference/uix-windows-extract/costura.system.diagnostics.diagnosticsource.dll.compressed
+reference/uix-windows-extract/costura32.hidusb32.dll
+reference/uix-windows-extract/costura32.ucrtbased.dll
+reference/uix-windows-extract/costura64.hidusb.dll
+reference/uix-windows-extract/costura64.msvcp140.dll
+reference/uix-windows-extract/costura64.vcruntime140.dll
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary._2In1.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary._3In1.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.AdjustControl.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.CustomDongleRGB.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.CustomKeyFunction.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.CustomSetting.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.CustomSubKeyFunction.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.DPIControl.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.ComboControlLibrary.KeyDebounce.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormAdvancedSetting.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormCalibration.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormDialog.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormEditDialog.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormFireKey.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormHomePage.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormMain.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormMoveXY.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormPair.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormRepair.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormSetting.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.FormUpdate.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.Properties.Resources.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_Advanced.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_DeviceUpdate.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_DongleLED.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_Language.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_Light.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_LongDistance.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_Pair.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_System.resources
+reference/uix-windows-extract/Mouse_Drive_Beta.View.UC_Web.resources
+reference/uix-windows-extract/README.md
+reference/uix-windows-extract/WindControls.SkinForm.resources
+revenger-pro-4k
+revenger-pro-4k.desktop
+revengerctl-cli
+revengerctl/__init__.py
+revengerctl/app.py
+revengerctl/apply.py
+revengerctl/cli.py
+revengerctl/device.py
+revengerctl/profiles.py
+revengerctl/protocol.py
+tests/test_apply.py
+tests/test_device.py
+tests/test_protocol.py
+udev/72-revenger-pro-4k.rules
+Windows referrence/.bss
+Windows referrence/.data
+Windows referrence/.didata
+Windows referrence/.edata
+Windows referrence/.idata
+Windows referrence/.itext
+Windows referrence/.rdata
+Windows referrence/.rsrc/0/RCDATA/11111
+Windows referrence/.rsrc/0/RCDATA/DVCLAL
+Windows referrence/.rsrc/0/RCDATA/PACKAGEINFO
+Windows referrence/.rsrc/0/string.txt
+Windows referrence/.rsrc/1033/GROUP_ICON/MAINICON
+Windows referrence/.rsrc/1033/ICON/100.ico
+Windows referrence/.rsrc/1033/MANIFEST/1
+Windows referrence/.rsrc/1033/version.txt
+Windows referrence/.rsrc_1
+Windows referrence/.text
+Windows referrence/.tls
+Windows referrence/[0]
+Windows referrence/CERTIFICATE
+Windows referrence/COUGAR_COUGAR Revenger Pro 4K_v1.0.0.42_2024.09.25_setup.exe

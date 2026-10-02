@@ -8,8 +8,9 @@
   </developer>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <url type="homepage">https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux</url>
-  <url type="vcs-browser">https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux</url>
+  <url type="homepage">https://github.com/noahkuowithme/Revenger-Pro-4K-Linux</url>
+  <url type="vcs-browser">https://github.com/noahkuowithme/Revenger-Pro-4K-Linux</url>
+  <url type="bugtracker">https://github.com/noahkuowithme/Revenger-Pro-4K-Linux/issues</url>
   <description>
     <p>Configure DPI stages and polling rate, inspect receiver connectivity, and pair the mouse with a supported receiver.</p>
   </description>
