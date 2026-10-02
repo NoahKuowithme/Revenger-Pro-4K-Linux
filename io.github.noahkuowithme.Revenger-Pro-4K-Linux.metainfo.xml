@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.noah.revengerpro4k</id>
+  <id>io.github.noahkuowithme.Revenger-Pro-4K-Linux</id>
   <name>Revenger Pro 4K</name>
   <summary>Configure the COUGAR Revenger Pro 4K mouse on Linux</summary>
   <developer id="org.revengerpro4k">
@@ -8,10 +8,12 @@
   </developer>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
+  <url type="homepage">https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux</url>
+  <url type="vcs-browser">https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux</url>
   <description>
     <p>Configure DPI stages and polling rate, inspect receiver connectivity, and pair the mouse with a supported receiver.</p>
   </description>
-  <launchable type="desktop-id">io.noah.revengerpro4k.desktop</launchable>
+  <launchable type="desktop-id">io.github.noahkuowithme.Revenger-Pro-4K-Linux.desktop</launchable>
   <content_rating type="oars-1.1"/>
   <releases>
     <release version="1.0.0" date="2026-09-29"/>

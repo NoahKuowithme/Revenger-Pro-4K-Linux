@@ -1,6 +1,7 @@
 # Flatpak / Flathub packaging
 
-The initial manifest is `io.noah.revengerpro4k.yml`. It builds the Python GTK
+The manifest filename must match the application ID:
+`io.github.noahkuowithme.Revenger-Pro-4K-Linux.yml`. It builds the Python GTK
 app against the GNOME 50 runtime and installs its 512×512 PNG icon
 under `/app/share`, where Flatpak exports them to desktop environments.
 
@@ -28,7 +29,7 @@ After installing `flatpak-builder` and the Flathub remote, build and install
 with:
 
 ```sh
-flatpak-builder --user --install --force-clean build-dir io.noah.revengerpro4k.yml
+flatpak-builder --user --install --force-clean build-dir io.github.noahkuowithme.Revenger-Pro-4K-Linux.yml
 ```
 
 The release manifest builds a pinned Git commit. To build uncommitted local

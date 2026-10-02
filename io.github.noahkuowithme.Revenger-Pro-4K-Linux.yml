@@ -1,0 +1,5 @@
+id: io.github.noahkuowithme.Revenger-Pro-4K-Linux
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: revenger-pro-4k
