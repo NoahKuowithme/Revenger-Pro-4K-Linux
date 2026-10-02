@@ -6,7 +6,7 @@
 
 ## HID and hardware accuracy
 - Treat protocol details as evidence-based. Clearly label inferred behavior, and do not claim a setting works until validated on the physical mouse/receiver.
-- Do not run the Windows UIX executable on Linux. Windows installer extracts under `Windows referrence/` or `references/uix-windows-extract/` are research material: never commit or package them.
+- Do not run the Windows UIX executable on Linux. Windows installer extracts under `Windows referrence/` or `reference/uix-windows-extract/` are research material: never commit or package them.
 - Keep the UI honest about device readback and sensor support. A calibration progress timer is not proof that hardware calibration ran.
 - A discovered `/dev/hidraw*` node does not prove it is writable. Check device permissions/ACLs and the host udev rule when diagnosing access.
 

@@ -51,9 +51,9 @@ window {
 .pair-result {
   padding: 8px;
 }
-.pair-failure {
-  color: #ffb4ab;
-  background-color: alpha(#b3261e, 0.24);
+.pair-status-warning {
+  color: #fcd34d;
+  background-color: alpha(#92400e, 0.24);
   border-radius: 8px;
 }
 .device-path {
@@ -95,7 +95,7 @@ TEXT = {
         "language": "Interface language",
         "cancel": "Cancel",
         "hero_subtitle": "The Ultimate Gaming Mouse — Linux companion",
-        "app_subtitle": "Linux companion · built by AI",
+        "app_subtitle": "Linux companion app",
         "connected": "USB control · {name} · {vid_pid} · {hidraw}\n{access}",
         "not_connected": "No receiver control interface detected.",
         "device_title": "USB device",
@@ -125,7 +125,7 @@ TEXT = {
         "pair_started": "Pairing request sent to {path}. The mouse should already be in pairing mode (rapid yellow light).",
         "pair_pending": "Receiver is waiting for the mouse…",
         "pair_succeeded": "Pairing succeeded.",
-        "pair_failed": "Pairing failure (Status 3). Hold the middle-wheel + right + left buttons until the yellow light flashes rapidly, then retry.",
+        "pair_failed": "The receiver reported pairing status 3; this does not mean USB control is disconnected. If the mouse already works with this receiver, you can continue. Otherwise, retry after the yellow light flashes rapidly.",
         "pair_timeout": "No pairing result before timeout. Check the mouse pairing mode and try again.",
         "stat_polling": "Polling",
         "stat_weight": "Weight",
@@ -173,7 +173,7 @@ TEXT = {
         "language": "介面語言",
         "cancel": "取消",
         "hero_subtitle": "頂級電競滑鼠 — Linux 控制程式",
-        "app_subtitle": "Linux 控制程式 · AI 製作",
+        "app_subtitle": "Linux 控制程式",
         "connected": "USB 控制介面 · {name} · {vid_pid} · {hidraw}\n{access}",
         "not_connected": "沒有偵測到接收器控制介面。",
         "device_title": "USB 裝置",
@@ -203,7 +203,7 @@ TEXT = {
         "pair_started": "已向 {path} 傳送配對請求。滑鼠應已進入配對模式（黃燈快速閃爍）。",
         "pair_pending": "接收器正在等待滑鼠…",
         "pair_succeeded": "配對成功。",
-        "pair_failed": "配對失敗（狀態 3）。請先同時按住滾輪、右鍵與左鍵，直到黃燈快速閃爍，再重試。",
+        "pair_failed": "接收器回報配對狀態 3；這不代表 USB 控制連線中斷。若滑鼠已能透過此接收器正常使用，可繼續操作；否則請確認黃燈快速閃爍後再重試。",
         "pair_timeout": "等待配對結果逾時。請確認滑鼠已進入配對模式後重試。",
         "stat_polling": "輪詢率",
         "stat_weight": "重量",
@@ -769,9 +769,9 @@ class CompanionWindow(Adw.ApplicationWindow):
         self._last_pair_output = line
         self.pair_result_label.set_text(self._translated_pair_output(line))
         if "status 3" in line.lower():
-            self.pair_result_label.add_css_class("pair-failure")
+            self.pair_result_label.add_css_class("pair-status-warning")
         else:
-            self.pair_result_label.remove_css_class("pair-failure")
+            self.pair_result_label.remove_css_class("pair-status-warning")
 
     def _stat_card(self, caption: str, key: str | None = None) -> tuple[Gtk.Box, Gtk.Label]:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -921,7 +921,7 @@ class CompanionWindow(Adw.ApplicationWindow):
         if self._last_pair_output and len(connected) == 1 and selected_pid in connected:
             self.show_pair_message(self._last_pair_output)
         else:
-            self.pair_result_label.remove_css_class("pair-failure")
+            self.pair_result_label.remove_css_class("pair-status-warning")
             self.pair_result_label.set_text(self.tr(self._pair_notice_key))
 
     def on_receiver_selected(self, *_args) -> None:

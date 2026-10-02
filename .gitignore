@@ -5,7 +5,7 @@ __pycache__/
 Windows referrence/
 
 # Extracted proprietary Windows UIX files are local research material, not Linux app assets.
-references/uix-windows-extract/*
-!references/uix-windows-extract/README.md
-references/legacy-launcher/*
-!references/legacy-launcher/README.md
+reference/uix-windows-extract/*
+!reference/uix-windows-extract/README.md
+reference/legacy-launcher/*
+!reference/legacy-launcher/README.md

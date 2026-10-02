@@ -3,4 +3,4 @@
 __version__ = "1.0.0"
 APP_ID = "io.noah.revengerpro4k"
 APP_TITLE = "Revenger Pro 4K"
-APP_SUBTITLE = "Linux companion · built by AI"
+APP_SUBTITLE = "Linux companion app"

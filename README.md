@@ -2,7 +2,10 @@
 
 Linux companion for the **COUGAR Revenger Pro 4K** (Compx OEM, USB `3554:f5de` / `3554:f5df`). Official UIX is Windows-only; this app talks to the dongle over HID on Linux.
 
-Built by AI for Noah.
+Community-maintained Linux companion app.
+
+For distro dependencies, native setup, desktop shortcut refresh, and
+troubleshooting, see [`INSTRUCTIONS.md`](INSTRUCTIONS.md).
 
 ## Specs (hardware)
 

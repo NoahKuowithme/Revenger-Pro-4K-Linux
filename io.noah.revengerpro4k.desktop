@@ -4,6 +4,7 @@ Type=Application
 Name=Revenger Pro 4K
 Comment=Linux companion for the COUGAR Revenger Pro 4K
 Exec=revenger-pro-4k
+TryExec=revenger-pro-4k
 Icon=io.noah.revengerpro4k
 Terminal=false
 Categories=Settings;HardwareSettings;
