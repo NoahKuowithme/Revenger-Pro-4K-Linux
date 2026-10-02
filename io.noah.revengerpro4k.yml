@@ -21,7 +21,7 @@ modules:
       - cp -a udev /app/share/revenger-pro-4k/
       - install -Dm755 flatpak-launcher.sh /app/bin/revenger-pro-4k
       - install -Dm644 io.noah.revengerpro4k.desktop /app/share/applications/io.noah.revengerpro4k.desktop
-      - install -Dm644 icons/io.noah.revengerpro4k.svg /app/share/icons/hicolor/scalable/apps/io.noah.revengerpro4k.svg
+      - install -Dm644 icons/io.noah.revengerpro4k.png /app/share/icons/hicolor/512x512/apps/io.noah.revengerpro4k.png
       - install -Dm644 io.noah.revengerpro4k.metainfo.xml /app/share/metainfo/io.noah.revengerpro4k.metainfo.xml
     sources:
       - type: git
@@ -30,7 +30,7 @@ modules:
       - type: file
         path: io.noah.revengerpro4k.desktop
       - type: file
-        path: icons/io.noah.revengerpro4k.svg
+        path: icons/io.noah.revengerpro4k.png
       - type: file
         path: io.noah.revengerpro4k.metainfo.xml
       - type: file

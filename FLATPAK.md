@@ -1,7 +1,7 @@
 # Flatpak / Flathub packaging
 
 The initial manifest is `io.noah.revengerpro4k.yml`. It builds the Python GTK
-app against the GNOME 50 runtime and installs its desktop entry and SVG icon
+app against the GNOME 50 runtime and installs its 512×512 PNG icon
 under `/app/share`, where Flatpak exports them to desktop environments.
 
 ## Hardware access
