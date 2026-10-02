@@ -1,6 +1,7 @@
 # COUGAR Revenger Pro 4K (Compx OEM): grant the active desktop session access
 # to the receiver's hidraw nodes. Avoid distro-specific groups such as plugdev;
 # systemd-logind applies the ACL for TAG+="uaccess".
+# Keep this filename before 73-seat-late.rules so its uaccess tag is processed.
 
 # 2.4 GHz / 1K, 4K, and alternate receiver USB IDs.
 SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="3554", ATTRS{idProduct}=="f5dc", MODE="0660", TAG+="uaccess"

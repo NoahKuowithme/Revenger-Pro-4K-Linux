@@ -14,7 +14,7 @@ the app needs and must be justified during Flathub review.
 
 The host udev rule is not installed by a Flatpak. On systems where the logged-in
 user does not already have access to the receiver's hidraw node, install the
-project's `udev/99-revenger-pro-4k.rules` on the host and reconnect the
+project's `udev/72-revenger-pro-4k.rules` on the host and reconnect the
 receiver. This requires administrator access and is a significant installation
 prerequisite to disclose in the Flathub listing.
 

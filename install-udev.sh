@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-RULE_SRC="$ROOT/udev/99-revenger-pro-4k.rules"
-RULE_DST="/etc/udev/rules.d/99-revenger-pro-4k.rules"
+RULE_SRC="$ROOT/udev/72-revenger-pro-4k.rules"
+RULE_DST="/etc/udev/rules.d/72-revenger-pro-4k.rules"
 
 printf 'Revenger Pro 4K — USB access setup\n\n'
 

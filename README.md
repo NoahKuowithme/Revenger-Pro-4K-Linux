@@ -66,7 +66,9 @@ Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
 
 `/dev/hidraw*` is root-only until you install the udev rule. The rule uses
 `uaccess` for the active desktop session and does not depend on Ubuntu's
-`plugdev` group, so it also works on Arch-based systems such as CachyOS:
+`plugdev` group, so it also works on Arch-based systems such as CachyOS. The
+rule is named `72-...` so its `uaccess` tag is set before systemd's
+`73-seat-late.rules` processes device ACLs.
 
 ```bash
 ./install-udev.sh

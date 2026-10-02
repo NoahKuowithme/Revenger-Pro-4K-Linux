@@ -853,14 +853,14 @@ class CompanionWindow(Adw.ApplicationWindow):
         if self._permission_dialog_shown:
             return
         self._permission_dialog_shown = True
-        rules_path = ROOT / "udev" / "99-revenger-pro-4k.rules"
+        rules_path = ROOT / "udev" / "72-revenger-pro-4k.rules"
         try:
             rules = rules_path.read_text().strip()
         except OSError as exc:
             self.toast_msg(str(exc))
             return
         script = (
-            "cat > /etc/udev/rules.d/99-revenger-pro-4k.rules <<'REVENGER_RULES'\n"
+            "cat > /etc/udev/rules.d/72-revenger-pro-4k.rules <<'REVENGER_RULES'\n"
             f"{rules}\n"
             "REVENGER_RULES\n"
             "udevadm control --reload-rules\n"
