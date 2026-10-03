@@ -1,41 +1,75 @@
 # Revenger Pro 4K for Linux
 
-Linux companion for the **COUGAR Revenger Pro 4K** (Compx OEM, USB `3554:f5de` / `3554:f5df`). Official UIX is Windows-only; this app talks to the dongle over HID on Linux.
+A community-maintained Linux companion app for the **COUGAR Revenger Pro 4K**.
+It provides a GTK desktop interface and command-line tools for communicating
+with the mouse receiver over USB HID.
 
-Community-maintained Linux companion app.
+> This project is not affiliated with COUGAR or Compucase. Some settings still
+> need confirmation on physical hardware; see [Known limitations](#known-limitations).
 
-For distro dependencies, native setup, desktop shortcut refresh, and
-troubleshooting, see [`INSTRUCTIONS.md`](INSTRUCTIONS.md).
+## Features
 
-## Specs (hardware)
+- GTK 4 and libadwaita interface in English and Traditional Chinese.
+- Command-line tools for device status, DPI, polling rate, and receiver pairing.
+- Per-user settings stored in `~/.config/revenger-pro-4k/`.
+- Host udev rule for session-based access to supported receiver IDs.
 
-- Ultra-light ergonomic shell, **55 g**
-- **4K wireless dongle**, up to **4000 Hz** polling
-- **26,000 DPI** PixArt optical sensor
-- Up to **150 hours** (1000 Hz)
-- PTFE feet and grip tape in the box
+## Install
 
-## Run the app
+Prebuilt Debian and Arch packages are attached to the
+[GitHub Release v2](https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/tag/v2).
+You can also create a native package from a source checkout.
+
+### Debian and Ubuntu
 
 ```bash
-cd ~/Desktop/Revenger-Pro-4K-Linux
+./packaging/build-deb.sh
+curl -LO https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/download/v2/revenger-pro-4k.deb
+sudo apt install ./revenger-pro-4k.deb
+```
+
+The package installs the app, desktop menu entry, icon, and udev rule. GTK and
+Python runtime dependencies are declared by the package manager.
+
+### Arch Linux and CachyOS
+
+Download the Arch package from the [v2 release](https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/tag/v2), then install it:
+
+```bash
+curl -LO https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/download/v2/revenger-pro-4k.pkg.tar.zst
+sudo pacman -U ./revenger-pro-4k.pkg.tar.zst
+```
+
+To build it yourself, install `base-devel` and run `makepkg -si` from the project directory.
+
+### Run from a checkout
+
+Install GTK 4, libadwaita, and PyGObject for your distribution, then run:
+
+```bash
 ./revenger-pro-4k
 ```
 
-The GUI has **Mouse settings** and **Receiver connection** pages; choose English
-or Traditional Chinese from the header. The performance card combines polling
-rate and DPI, while Sensor tuning includes LOD, angle snapping and Motion Sync.
-Use **Apply to mouse** to send all of those settings together.
+To add a desktop menu shortcut for the checkout, run `./install-app.sh`.
+Detailed distro dependencies and troubleshooting steps are in
+[`INSTRUCTIONS.md`](INSTRUCTIONS.md).
 
-### Customize the GUI
+## Receiver access
 
-The GUI layout and behavior are in [`revengerctl/app.py`](revengerctl/app.py).
-Edit the `TEXT` dictionary near the top of that file to change English or
-Traditional Chinese labels and messages. The `MainWindow` class builds the
-header and the **Mouse settings** / **Receiver connection** pages; look there to
-rearrange controls or adjust the layout. Restart the app to see your changes.
+The app needs permission to open the receiver's `/dev/hidraw*` interface. Native
+packages install the udev rule automatically. For a source checkout, install it
+once on the host:
 
-CLI:
+```bash
+./install-udev.sh
+```
+
+Approve the administrator prompt, then unplug and reconnect the receiver. The
+rule uses `TAG+="uaccess"` for the active desktop session; it does not rely on
+the `plugdev` group. Device discovery alone does not confirm that the HID node
+is writable. See [`INSTRUCTIONS.md`](INSTRUCTIONS.md) if access is still denied.
+
+## Command-line examples
 
 ```bash
 ./revengerctl-cli probe
@@ -43,80 +77,80 @@ CLI:
 ./revengerctl-cli dpi 2 1600
 ./revengerctl-cli polling 4000
 ./revengerctl-cli apply
-./revengerctl-cli pair
 ./revengerctl-cli pair --receiver 1k
 ```
 
-`pair` defaults to the 4K receiver; use `--receiver 1k` to target the 2.4 GHz
-receiver. Disconnect the other receiver, turn on the mouse, place it within
-10 cm, then hold middle-wheel + right + left together for about 3 seconds until the
-yellow pairing light flashes rapidly. Only then start receiver pairing. Add
-`--debug` to print input reports as hex if pairing fails.
+Pairing defaults to the 4K receiver. For 2.4 GHz pairing, use `--receiver 1k`.
+Disconnect the other receiver, turn on the mouse, place it within 10 cm, then
+hold the middle wheel, right button, and left button together for about three
+seconds until the yellow light flashes rapidly. Start pairing only after that.
+Add `--debug` to print input reports as hex when diagnosing a pairing attempt.
 
-To add the app to the desktop application menu with its icon, run:
+## Known limitations
+
+- DPI and polling commands send UIX-derived HID write requests. Their behavior
+  and persistence still need physical mouse validation.
+- `status` uses the local profile for DPI stages and active stage; it does not
+  read those values back from mouse flash. Polling readback is also unconfirmed.
+- LOD, angle snapping, and Motion Sync can be sent with **Apply to mouse**, but
+  the app cannot read them back yet. Confirm their effect on the mouse.
+- The calibration control mirrors UIX's three-second timer. It does not send a
+  hardware calibration command. Debounce is not applied.
+- Pairing status decoding follows the UIX callback layout; the Linux report
+  offset still needs hardware confirmation.
+
+## Development and license
+
+The GTK interface and translations are in [`revengerctl/app.py`](revengerctl/app.py).
+Protocol and device code live in `revengerctl/`. The project is licensed under
+**GPL-3.0-or-later**; see [`LICENSE`](LICENSE).
+
+<details>
+<summary>繁體中文</summary>
+
+這是 COUGAR Revenger Pro 4K 的社群維護 Linux 控制程式，提供 GTK 桌面介面
+和命令列工具，透過 USB HID 與接收器通訊。本專案與 COUGAR／Compucase 無關。
+
+### 安裝套件
+
+預編譯套件已附在 [GitHub Release v2](https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/tag/v2)。也可以在專案目錄自行建置。
+
+**Debian／Ubuntu**
 
 ```bash
-./install-app.sh
+curl -LO https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/download/v2/revenger-pro-4k.deb
+sudo apt install ./revenger-pro-4k.deb
 ```
 
-Flatpak packaging for a future Flathub submission is documented in
-[`FLATPAK.md`](FLATPAK.md). The Flatpak needs host udev access to the receiver;
-the sandbox cannot install the project's udev rule itself.
+**Arch／CachyOS**：下載 [v2 release](https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/tag/v2) 的套件後安裝：
 
-Needs GTK 4 and libadwaita (already typical on Ubuntu/GNOME).
+```bash
+curl -LO https://github.com/NoahKuowithme/Revenger-Pro-4K-Linux/releases/download/v2/revenger-pro-4k.pkg.tar.zst
+sudo pacman -U ./revenger-pro-4k.pkg.tar.zst
+```
 
-## Allow HID access (once)
+套件會安裝程式、桌面選單項目、圖示和 udev 規則。也可以直接從原始碼目錄執行
+`./revenger-pro-4k`；詳細相依套件請看 [`INSTRUCTIONS.md`](INSTRUCTIONS.md)。
 
-`/dev/hidraw*` is root-only until you install the udev rule. The rule uses
-`uaccess` for the active desktop session and does not depend on Ubuntu's
-`plugdev` group, so it also works on Arch-based systems such as CachyOS. The
-rule is named `72-...` so its `uaccess` tag is set before systemd's
-`73-seat-late.rules` processes device ACLs.
+### 接收器權限
+
+原生套件會安裝 udev 規則。若直接從原始碼執行，請在主機執行一次：
 
 ```bash
 ./install-udev.sh
 ```
 
-The Flatpak shows a first-run setup guide when it detects the receiver but
-cannot open its HID device. Copy the displayed command into a host terminal,
-approve the administrator prompt once, then reconnect the receiver. The app
-does not run host commands from inside the Flatpak sandbox.
+核准管理員提示後，拔除並重新接上接收器。偵測到 `/dev/hidraw*` 不代表程式已有
+讀寫權限；若仍無法連線，請依照安裝說明檢查 ACL。
 
-Then unplug and replug the dongle. This grants the app permission to open the HID interface.
-If the app still reports an access error, check that you launched it from your
-logged-in desktop session and inspect the node's ACL with
-`getfacl /dev/hidrawN` (replace `N` with the path shown by `./revengerctl-cli probe`).
+### 已知限制
 
-## Notes
+- DPI／回報率寫入行為仍需在實體滑鼠上驗證。
+- DPI 狀態來自本機設定檔，尚未從滑鼠 flash 讀回；回報率讀回也未確認。
+- LOD、角度修正和 Motion Sync 可送出設定，但目前無法讀回確認。
+- 校正按鈕只顯示三秒計時，不會送出硬體校正命令；Debounce 尚未套用。
+- 配對狀態的 Linux HID 報告位置仍待實機確認。
 
-- The mouse still works as a normal pointer without this app.
-- `dpi` and `polling` use UIX 1.0.0.42-derived flash-write frames sent using
-  HID SetFeature, matching UIX's native route for command reports. The `dpi`
-  command writes the requested stage and activates it; `apply` writes polling,
-  all five physical DPI slots, and the selected active stage with a short gap
-  between reports. Unconfigured trailing slots repeat the last visible stage
-  because the verified protocol has no stage-count control. DPI changes still
-  need physical validation.
-- LOD, angle snapping and Motion Sync fields and sensor support for the PixArt
-  3395 were confirmed against the supplied UIX 1.0.0.42 reference. The Linux
-  app writes these values with the main Apply action, but cannot read them back
-  yet; verify the behavior on the mouse. Angle snapping is UIX's
-  `linearCorrectionEnable` setting.
-- UIX's calibration screen runs a three-second status timer but contains no
-  calibration HID command. The Linux button mirrors that visible timer and
-  says so; it does not claim to calibrate the surface. Debounce is not yet
-  applied.
-- `status` does not yet read the five DPI values back from mouse flash, so its
-  displayed DPI stages and active-stage selection come from the local profile.
-  The polling-rate field is also not yet confirmed as a reliable hardware
-  readback.
-- Pair-status decoding is based on UIX's native callback layout and still needs
-  a hardware run to confirm the Linux report offset.
-- Not affiliated with COUGAR / Compucase.
-- Licensed under the GNU General Public License v3.0 or later; see [LICENSE](LICENSE).
+本專案採用 **GPL-3.0-or-later**，詳見 [`LICENSE`](LICENSE)。
 
-## Reference files
-
-The extracted Windows UIX installer and its `Windows referrence/` folder are
-local research material and intentionally ignored by Git. They are not needed
-to run the Linux app. The active launcher is `revenger-pro-4k.desktop`.
+</details>

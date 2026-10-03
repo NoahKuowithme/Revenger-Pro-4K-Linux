@@ -58,6 +58,12 @@ python3 ./revenger-pro-4k
 The launcher adds the project directory to Python's import path and starts the
 GTK application. Do not use `sudo` to launch the GUI.
 
+For Debian/Ubuntu, install the downloadable `.deb` with
+`sudo apt install ./revenger-pro-4k.deb`. For Arch/CachyOS, install the
+downloadable package with `sudo pacman -U ./revenger-pro-4k.pkg.tar.zst`, or
+install `base-devel` and run `makepkg -si` from a checkout. The packages install
+the menu entry and udev rule in standard system paths.
+
 Install receiver permissions once on the host:
 
 ```bash
@@ -118,8 +124,7 @@ udevadm info --query=property --name="$NODE" | grep -E '^(ID_VENDOR_ID|ID_MODEL_
 ```
 
 If the rule was just installed, reconnect the receiver so udev reprocesses its
-hidraw interfaces. The Flatpak cannot install host udev rules; see
-[`FLATPAK.md`](FLATPAK.md).
+hidraw interfaces.
 
 ### Pairing status 3 while USB control still works
 
